@@ -42,6 +42,7 @@ export const getJobs = async (req: Request, res: Response) => {
       type,
       page = "1",
       limit = "10",
+      sort,
     } = req.query;
 
     const filter: Record<string, unknown> = { isActive: true };
@@ -51,6 +52,8 @@ export const getJobs = async (req: Request, res: Response) => {
     if (location)
       filter.location = new RegExp(escapeRegex(String(location)), "i");
     if (type) filter.type = type;
+    if (sort === "salary")
+      filter.$or = [{ salaryMax: { $gt: 0 } }, { salaryMin: { $gt: 0 } }];
 
     const pageNum = Number(page);
     const limitNum = Number(limit);
@@ -58,7 +61,11 @@ export const getJobs = async (req: Request, res: Response) => {
     const [jobs, total] = await Promise.all([
       Job.find(filter)
         .populate("employer", "name company")
-        .sort({ createdAt: -1 })
+        .sort(
+          sort === "salary"
+            ? { salaryMax: -1, salaryMin: -1 }
+            : { createdAt: -1 }
+        )
         .skip((pageNum - 1) * limitNum)
         .limit(limitNum),
       Job.countDocuments(filter),

@@ -56,34 +56,66 @@ export const getApplicationsForJob = async (req: Request, res: Response) => {
 };
 
 // Employer: update an application's status
+// Employer: update an application's status
 export const updateApplicationStatus = async (req: Request, res: Response) => {
-  const { status } = req.body;
+  try {
+    const { status } = req.body;
 
-  const application = await Application.findById(req.params.id).populate("job");
-  if (!application) return res.status(404).json({ message: "Application not found" });
+    const application = await Application.findById(req.params.id).populate("job");
 
-  const job = application.job as any;
-  if (String(job.employer) !== req.user?.id) {
-    return res.status(403).json({ message: "Not your job posting" });
-  }
-
-   const wasAccepted = application.status === "accepted";
-  application.status = status;
-  await application.save();
-
-  // Email the candidate only when the status newly becomes "accepted"
-  if (status === "accepted" && !wasAccepted) {
-    try {
-      const candidate = await User.findById(application.candidate).select("name email");
-      if (candidate) {
-        await sendEmail({
-          to: candidate.email,
-          subject: `Your application for ${job.title} was accepted`,
-          text: `Hi ${candidate.name},\n\nGood news! Your application for "${job.title}" at ${job.company} has been accepted. The employer will contact you with next steps.\n\nBest regards,\nJob Portal`,
-        });
-      }
-    } catch (err) {
-      console.error("Failed to send acceptance email:", err);
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found",
+      });
     }
+
+    const job = application.job as any;
+
+    if (String(job.employer) !== req.user?.id) {
+      return res.status(403).json({
+        message: "Not your job posting",
+      });
+    }
+
+    const wasAccepted = application.status === "accepted";
+
+    application.status = status;
+    await application.save();
+
+    // Email the candidate only when the status newly becomes "accepted"
+    if (status === "accepted" && !wasAccepted) {
+      try {
+        const candidate = await User.findById(application.candidate).select(
+          "name email"
+        );
+
+        if (candidate) {
+          await sendEmail({
+            to: candidate.email,
+            subject: `Your application for ${job.title} was accepted`,
+            text: `Hi ${candidate.name},
+
+Good news! Your application for "${job.title}" at ${job.company} has been accepted. The employer will contact you with next steps.
+
+Best regards`,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to send acceptance email:", err);
+      }
+    }
+
+    // Send updated application back to frontend
+    return res.status(200).json({
+      message: "Application status updated successfully",
+      application,
+    });
+  } catch (error: any) {
+    console.error("Update application status error:", error);
+
+    return res.status(500).json({
+      message: "Failed to update application status",
+      error: error.message,
+    });
   }
-}
+};
