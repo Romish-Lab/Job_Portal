@@ -16,7 +16,6 @@ router.get("/", getJobs);
 router.get("/mine", protect, authorize("employer"), getMyJobs);
 router.get("/:id", getJobById);
 router.post("/", protect, authorize("employer"), uploadLogo.single("logo"), createJob);
-router.post("/", protect, authorize("employer"), createJob);
 router.put("/:id", protect, authorize("employer"), updateJob);
 router.delete("/:id", protect, authorize("employer"), deleteJob);
 

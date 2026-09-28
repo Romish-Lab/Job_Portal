@@ -26,6 +26,7 @@ const jobSchema = new Schema<IJob>(
     requirements: [{ type: String }],
     company: { type: String, required: true },
     location: { type: String, required: true },
+    logoUrl: { type: String }, 
     salaryMin: { type: Number },
     salaryMax: { type: Number },
     type: {

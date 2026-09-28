@@ -7,12 +7,27 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   // close the mobile menu whenever the page changes
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
-
+  // hide the header when scrolling down, show it again when scrolling up
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < 80)
+        setHidden(false); // always show near the top
+      else if (y > lastY + 5)
+        setHidden(true); // scrolling down
+      else if (y < lastY - 5) setHidden(false); // scrolling up
+      lastY = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -25,13 +40,15 @@ export default function Navbar() {
           { to: "/post-job", label: "Post a job" },
         ]
       : user?.role === "candidate"
-      ? [{ to: "/my-applications", label: "My applications" }]
-      : user?.role === "admin"
-      ? [{ to: "/admin/users", label: "Manage users" }]
-      : [];
+        ? [{ to: "/my-applications", label: "My applications" }]
+        : user?.role === "admin"
+          ? [{ to: "/admin/users", label: "Manage users" }]
+          : [];
 
   return (
-    <header className="site-header">
+    <header
+      className={`site-header${hidden && !open ? " site-header--hidden" : ""}`}
+    >
       <div className="header-inner">
         <Link to="/" className="logo">
           <span className="logo-mark">T</span>
@@ -52,7 +69,10 @@ export default function Navbar() {
           <span />
         </button>
 
-        <div className={open ? "header-menu open" : "header-menu"} onClick={() => setOpen(false)}>
+        <div
+          className={open ? "header-menu open" : "header-menu"}
+          onClick={() => setOpen(false)}
+        >
           <nav className="main-nav" aria-label="Main">
             <NavLink to="/" end>
               Search
@@ -74,10 +94,16 @@ export default function Navbar() {
             {user ? (
               <>
                 <span className="user-chip" title={user.role}>
-                  <span className="user-avatar">{user.name.charAt(0).toUpperCase()}</span>
+                  <span className="user-avatar">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
                   {user.name.split(" ")[0]}
                 </span>
-                <button type="button" className="btn-login" onClick={handleLogout}>
+                <button
+                  type="button"
+                  className="btn-login"
+                  onClick={handleLogout}
+                >
                   Log out
                 </button>
               </>

@@ -892,12 +892,17 @@ textarea:focus {
   z-index: 50;
   background: #172554;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.3s ease;        
+}
+.site-header--hidden {                   
+  transform: translateY(-100%);
 }
 
 .header-inner {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0.85rem 1.5rem;
+  padding: 1.25rem 1.5rem;                
+  min-height: 84px;                       
   display: flex;
   align-items: center;
   gap: 2rem;
