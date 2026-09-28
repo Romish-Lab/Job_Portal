@@ -10,6 +10,7 @@ import userRoutes from "./routes/user.routes";
 import applicationRoutes from "./routes/application.routes";
 
 dotenv.config();
+console.log("SMTP_HOST =", process.env.SMTP_HOST);
 
 const app = express();
 

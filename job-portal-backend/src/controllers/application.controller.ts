@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import Application from "../models/application.model";
 import Job from "../models/job.model";
+import User from "../models/user.model";
+import { sendEmail } from "../utils/sendEmail";
 
 // Candidate applies to a job (resume file handled by multer -> req.file)
 export const applyToJob = async (req: Request, res: Response) => {
@@ -65,8 +67,23 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
     return res.status(403).json({ message: "Not your job posting" });
   }
 
+   const wasAccepted = application.status === "accepted";
   application.status = status;
   await application.save();
 
-  res.status(200).json({ message: "Application status updated", application });
-};
+  // Email the candidate only when the status newly becomes "accepted"
+  if (status === "accepted" && !wasAccepted) {
+    try {
+      const candidate = await User.findById(application.candidate).select("name email");
+      if (candidate) {
+        await sendEmail({
+          to: candidate.email,
+          subject: `Your application for ${job.title} was accepted`,
+          text: `Hi ${candidate.name},\n\nGood news! Your application for "${job.title}" at ${job.company} has been accepted. The employer will contact you with next steps.\n\nBest regards,\nJob Portal`,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send acceptance email:", err);
+    }
+  }
+}

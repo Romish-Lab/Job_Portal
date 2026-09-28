@@ -1,0 +1,14 @@
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/job_portal
+JWT_SECRET=qwertyasdfgbYYUUU1234mmmnnGGTTT
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+SMTP_HOST=smpt.gmail.com
+SMTP_PORT=587
+SMTP_USER=ramku3432@gmail.com
+SMTP_PASS=ssej reqb bssw hsdn
