@@ -77,11 +77,11 @@ export default function Navbar() {
             <NavLink to="/" end>
               Search
             </NavLink>
-            <a href="#about">About Us</a>
-            <a href="#services">Services</a>
-            <a href="#help">Help</a>
-            <a href="#blog">Blog</a>
-            <a href="#contact">Contact Us</a>
+            <NavLink to="/about">About Us</NavLink>
+            <NavLink to="/services">Services</NavLink>
+            <NavLink to="/help">Help</NavLink>
+            <NavLink to="/blog">Blog</NavLink>
+            <NavLink to="/contact">Contact Us</NavLink>
           </nav>
 
           <div className="header-actions">
