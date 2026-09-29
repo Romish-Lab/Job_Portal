@@ -1312,7 +1312,6 @@ textarea:focus {
 /* room under the hero for the overlapping search bar, wider job grid */
 .page-home {
   max-width: 1120px;
-  padding-top: 5.2rem;
 }
 
 /* ---------- Tablet + mobile ---------- */
@@ -1412,7 +1411,7 @@ textarea:focus {
   gap: 1.75rem;
   max-width: 1240px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 0;
+  padding: 5.2rem 1.5rem 0; /* was 2.5rem — now matches the search bar clearance */
 }
 
 .home-layout .page {
@@ -1555,7 +1554,6 @@ textarea:focus {
     box-sizing: border-box;
   }
 }
-
 
 /* =====================================================
    Content pages: About, Services, Help, Blog, Contact
@@ -1732,7 +1730,9 @@ textarea:focus {
   font-weight: 600;
   list-style: none;
 }
-.faq summary::-webkit-details-marker { display: none; }
+.faq summary::-webkit-details-marker {
+  display: none;
+}
 .faq summary::before {
   content: "+";
   display: inline-block;
@@ -1740,7 +1740,9 @@ textarea:focus {
   color: var(--accent, #4338ca);
   font-weight: 700;
 }
-.faq details[open] summary::before { content: "–"; }
+.faq details[open] summary::before {
+  content: "–";
+}
 
 .faq p {
   color: var(--ink-muted);
@@ -1763,8 +1765,12 @@ textarea:focus {
   overflow: hidden;
   color: var(--ink);
 }
-.blog-featured:hover { text-decoration: none; }
-.blog-featured .picture { aspect-ratio: 16 / 11; }
+.blog-featured:hover {
+  text-decoration: none;
+}
+.blog-featured .picture {
+  aspect-ratio: 16 / 11;
+}
 
 .blog-featured-body {
   padding: 1.75rem;
@@ -1818,8 +1824,12 @@ textarea:focus {
   display: flex;
   flex-direction: column;
 }
-.blog-card:hover { text-decoration: none; }
-.blog-card .picture { aspect-ratio: 16 / 10; }
+.blog-card:hover {
+  text-decoration: none;
+}
+.blog-card .picture {
+  aspect-ratio: 16 / 10;
+}
 
 .blog-card-body {
   padding: 1.1rem;
@@ -1911,7 +1921,13 @@ textarea:focus {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 800px) {
-  .split { grid-template-columns: 1fr; }
-  .blog-featured { grid-template-columns: 1fr; }
-  .contact-grid { grid-template-columns: 1fr; }
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .blog-featured {
+    grid-template-columns: 1fr;
+  }
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
 }

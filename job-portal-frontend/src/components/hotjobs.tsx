@@ -49,7 +49,7 @@ export default function HotJobs() {
     >
       <div className="hot-head">
         <span aria-hidden="true">💰</span>
-        <h2>Top paying jobs</h2>
+        <h2>Highest paying jobs</h2>
       </div>
 
       {/* key remounts the card so the fade-in plays on every change */}

@@ -4,6 +4,7 @@ import client from "../api/client";
 import { Job } from "../types";
 import JobCard from "../components/JobCard";
 import Hero, { SearchFilters } from "../components/Hero";
+import HotJobs from "../components/HotJobs";
 
 export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +46,8 @@ export default function Jobs() {
     <div className="home">
       <Hero initial={{ title, type, company }} onSearch={onSearch} />
 
+      <div className="home-layout">
+      <HotJobs />
       <div className="page page-home">
         <div className="page-header">
           <h2>Open roles</h2>
@@ -68,6 +71,7 @@ export default function Jobs() {
             <JobCard key={job._id} job={job} />
           ))}
         </div>
+      </div>
       </div>
     </div>
   );
