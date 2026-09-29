@@ -15,7 +15,22 @@ const MAX_LIMIT = 50;
 export const applyToJob = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const { coverLetter } = req.body;
+    const {
+      fullName,
+      email,
+      phone,
+      coverLetter,
+      portfolioUrl,
+      highestEducation,
+      university,
+      yearsOfExperience,
+      currentLocation,
+      expectedSalary,
+      availability,
+      workPreference,
+      skills, // comma-separated string from the form
+      additionalInfo,
+    } = req.body;
 
     if (!mongoose.isValidObjectId(jobId)) {
       return res.status(400).json({ message: "Invalid job id" });
@@ -30,12 +45,59 @@ export const applyToJob = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Resume file is required" });
     }
 
+    const required: Record<string, unknown> = {
+      fullName,
+      email,
+      phone,
+      coverLetter,
+      highestEducation,
+      yearsOfExperience,
+      currentLocation,
+      skills,
+    };
+    const missing = Object.entries(required)
+      .filter(([, v]) => v === undefined || v === null || String(v).trim() === "")
+      .map(([k]) => k);
+    if (missing.length > 0) {
+      return res
+        .status(400)
+        .json({ message: `Missing required field(s): ${missing.join(", ")}` });
+    }
+
+    const workPreferences = ["remote", "on-site", "hybrid"];
+    if (workPreference && !workPreferences.includes(workPreference)) {
+      return res.status(400).json({
+        message: `Work preference must be one of: ${workPreferences.join(", ")}`,
+      });
+    }
+
+    const skillsArray = String(skills)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (skillsArray.length === 0) {
+      return res.status(400).json({ message: "Please list at least one skill" });
+    }
+
     const application = await Application.create({
       job: jobId,
       candidate: req.user?.id,
+      fullName,
+      email,
+      phone,
       // Stored as a relative path; served only via GET /api/applications/:id/resume
       resumeUrl: `resumes/${req.file.filename}`,
       coverLetter,
+      portfolioUrl: portfolioUrl || undefined,
+      highestEducation,
+      university: university || undefined,
+      yearsOfExperience: Number(yearsOfExperience),
+      currentLocation,
+      expectedSalary: expectedSalary ? Number(expectedSalary) : undefined,
+      availability: availability || undefined,
+      workPreference: workPreference || undefined,
+      skills: skillsArray,
+      additionalInfo: additionalInfo || undefined,
     });
 
     res.status(201).json({ message: "Application submitted", application });

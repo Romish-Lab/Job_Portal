@@ -90,56 +90,81 @@ export default function JobApplicants() {
       )}
 
       <div className="application-list">
-        {applications.map((app) => {
-          const candidate =
-            typeof app.candidate === "object"
-              ? app.candidate
-              : null;
+        {applications.map((app) => (
+          <div className="applicant-row" key={app._id}>
+            <div className="applicant-info">
+              <h3>{app.fullName}</h3>
 
-          return (
-            <div className="applicant-row" key={app._id}>
-              <div className="applicant-info">
-                <h3>{candidate?.name}</h3>
+              <p className="job-row-meta">
+                {app.email} · {app.phone}
+              </p>
 
+              <p className="job-row-meta">
+                {app.currentLocation}
+                {app.workPreference && ` · ${app.workPreference}`}
+                {app.availability && ` · Available: ${app.availability}`}
+              </p>
+
+              <p className="job-row-meta">
+                {app.highestEducation}
+                {app.university && ` — ${app.university}`}
+                {" · "}
+                {app.yearsOfExperience} yr{app.yearsOfExperience === 1 ? "" : "s"} experience
+                {app.expectedSalary ? ` · Expects $${app.expectedSalary.toLocaleString()}` : ""}
+              </p>
+
+              {app.skills?.length > 0 && (
+                <div className="skill-tags">
+                  {app.skills.map((s, i) => (
+                    <span className="skill-tag" key={i}>{s}</span>
+                  ))}
+                </div>
+              )}
+
+              {app.portfolioUrl && (
                 <p className="job-row-meta">
-                  {candidate?.email}
+                  <a href={app.portfolioUrl} target="_blank" rel="noreferrer">
+                    Portfolio / LinkedIn
+                  </a>
                 </p>
+              )}
 
-                {app.coverLetter && (
-                  <p className="cover-letter">
-                    {app.coverLetter}
-                  </p>
-                )}
+              {app.coverLetter && (
+                <p className="cover-letter">{app.coverLetter}</p>
+              )}
 
-                <a
-                  className="resume-link"
-                  href={`${client.defaults.baseURL}/applications/${app._id}/resume`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View resume
-                </a>
-              </div>
+              {app.additionalInfo && (
+                <p className="cover-letter">{app.additionalInfo}</p>
+              )}
 
-              <select
-                className="status-select"
-                value={app.status}
-                onChange={(e) =>
-                  onStatusChange(
-                    app._id,
-                    e.target.value as ApplicationStatus
-                  )
-                }
+              <a
+                className="resume-link"
+                href={`${client.defaults.baseURL}/applications/${app._id}/resume`}
+                target="_blank"
+                rel="noreferrer"
               >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+                View resume
+              </a>
             </div>
-          );
-        })}
+
+            <select
+              className="status-select"
+              value={app.status}
+              onChange={(e) =>
+                onStatusChange(
+                  app._id,
+                  e.target.value as ApplicationStatus
+                )
+              }
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
 
       {!loading && !error && totalPages > 1 && (

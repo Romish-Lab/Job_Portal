@@ -3,6 +3,41 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Job } from "../types";
 import { useAuth } from "../context/AuthContext";
 import client, { assetUrl } from "../api/client";
+
+interface ApplyForm {
+  fullName: string;
+  email: string;
+  phone: string;
+  coverLetter: string;
+  portfolioUrl: string;
+  highestEducation: string;
+  university: string;
+  yearsOfExperience: string;
+  currentLocation: string;
+  expectedSalary: string;
+  availability: string;
+  workPreference: "" | "remote" | "on-site" | "hybrid";
+  skills: string;
+  additionalInfo: string;
+}
+
+const emptyForm: ApplyForm = {
+  fullName: "",
+  email: "",
+  phone: "",
+  coverLetter: "",
+  portfolioUrl: "",
+  highestEducation: "",
+  university: "",
+  yearsOfExperience: "",
+  currentLocation: "",
+  expectedSalary: "",
+  availability: "",
+  workPreference: "",
+  skills: "",
+  additionalInfo: "",
+};
+
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -10,15 +45,30 @@ export default function JobDetail() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
-  const [coverLetter, setCoverLetter] = useState("");
+  const [form, setForm] = useState<ApplyForm>(emptyForm);
   const [resume, setResume] = useState<File | null>(null);
   const [applying, setApplying] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     client.get(`/jobs/${id}`).then(({ data }) => setJob(data.job)).finally(() => setLoading(false));
   }, [id]);
+
+  // Pre-fill name/email once the user loads, without overwriting anything already typed
+  useEffect(() => {
+    if (!user) return;
+    setForm((f) => ({
+      ...f,
+      fullName: f.fullName || user.name,
+      email: f.email || user.email,
+    }));
+  }, [user]);
+
+  const setField = (field: keyof ApplyForm) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const onApply = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,10 +79,27 @@ export default function JobDetail() {
       setError("Please attach your resume (PDF, DOC, or DOCX).");
       return;
     }
+    const required: [keyof ApplyForm, string][] = [
+      ["fullName", "Full name"],
+      ["email", "Email"],
+      ["phone", "Phone number"],
+      ["coverLetter", "Cover letter"],
+      ["highestEducation", "Highest education"],
+      ["yearsOfExperience", "Years of experience"],
+      ["currentLocation", "Current location"],
+      ["skills", "Relevant skills"],
+    ];
+    const missing = required.find(([key]) => !form[key].trim());
+    if (missing) {
+      setError(`${missing[1]} is required.`);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("resume", resume);
-    if (coverLetter) formData.append("coverLetter", coverLetter);
+    Object.entries(form).forEach(([key, value]) => {
+      if (value) formData.append(key, value);
+    });
 
     setApplying(true);
     try {
@@ -40,6 +107,9 @@ export default function JobDetail() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setMessage("Application submitted! You can track its status from My applications.");
+      setForm(emptyForm);
+      setResume(null);
+      setShowForm(false);
     } catch (err: any) {
       setError(err.response?.data?.message || "Couldn't submit your application.");
     } finally {
@@ -106,33 +176,176 @@ export default function JobDetail() {
         )}
 
         {user?.role === "candidate" && (
-          <form className="apply-form" onSubmit={onApply}>
+          <>
             {message && <div className="form-success">{message}</div>}
-            {error && <div className="form-error">{error}</div>}
+
+            {!showForm && !message && (
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={() => setShowForm(true)}
+              >
+                Apply now
+              </button>
+            )}
+
+            {showForm && (
+              <form className="apply-form" onSubmit={onApply}>
+                {error && <div className="form-error">{error}</div>}
+
+            <div className="apply-form-grid">
+              <label>
+                Full name *
+                <input type="text" value={form.fullName} onChange={setField("fullName")} required />
+              </label>
+
+              <label>
+                Email *
+                <input type="email" value={form.email} onChange={setField("email")} required />
+              </label>
+
+              <label>
+                Phone number *
+                <input type="tel" value={form.phone} onChange={setField("phone")} required />
+              </label>
+
+              <label>
+                Current location *
+                <input
+                  type="text"
+                  value={form.currentLocation}
+                  onChange={setField("currentLocation")}
+                  placeholder="City, Country"
+                  required
+                />
+              </label>
+
+              <label>
+                Highest education *
+                <input
+                  type="text"
+                  value={form.highestEducation}
+                  onChange={setField("highestEducation")}
+                  placeholder="e.g. Bachelor's in Computer Science"
+                  required
+                />
+              </label>
+
+              <label>
+                University / College
+                <input type="text" value={form.university} onChange={setField("university")} />
+              </label>
+
+              <label>
+                Years of experience *
+                <input
+                  type="number"
+                  min={0}
+                  step="0.5"
+                  value={form.yearsOfExperience}
+                  onChange={setField("yearsOfExperience")}
+                  required
+                />
+              </label>
+
+              <label>
+                Expected salary
+                <input
+                  type="number"
+                  min={0}
+                  value={form.expectedSalary}
+                  onChange={setField("expectedSalary")}
+                  placeholder="Annual, in your currency"
+                />
+              </label>
+
+              <label>
+                Availability / notice period
+                <input
+                  type="text"
+                  value={form.availability}
+                  onChange={setField("availability")}
+                  placeholder="e.g. Immediate, 2 weeks"
+                />
+              </label>
+
+              <label>
+                Work preference
+                <select value={form.workPreference} onChange={setField("workPreference")}>
+                  <option value="">No preference</option>
+                  <option value="remote">Remote</option>
+                  <option value="on-site">On-site</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </label>
+
+              <label>
+                Portfolio / LinkedIn URL
+                <input
+                  type="url"
+                  value={form.portfolioUrl}
+                  onChange={setField("portfolioUrl")}
+                  placeholder="https://…"
+                />
+              </label>
+
+              <label>
+                Relevant skills *
+                <input
+                  type="text"
+                  value={form.skills}
+                  onChange={setField("skills")}
+                  placeholder="Comma-separated, e.g. React, Node.js, SQL"
+                  required
+                />
+              </label>
+            </div>
 
             <label>
-              Resume (PDF, DOC, or DOCX)
+              Resume (PDF, DOC, or DOCX) *
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => setResume(e.target.files?.[0] || null)}
+                required
               />
             </label>
 
             <label>
-              Cover letter (optional)
+              Cover letter *
               <textarea
                 rows={4}
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
+                value={form.coverLetter}
+                onChange={setField("coverLetter")}
                 placeholder="Why you're a fit for this role…"
+                required
+              />
+            </label>
+
+            <label>
+              Additional information
+              <textarea
+                rows={3}
+                value={form.additionalInfo}
+                onChange={setField("additionalInfo")}
+                placeholder="Anything else you'd like the employer to know…"
               />
             </label>
 
             <button className="btn-primary" type="submit" disabled={applying}>
               {applying ? "Submitting…" : "Submit application"}
             </button>
+            <button
+              className="btn-ghost"
+              type="button"
+              onClick={() => setShowForm(false)}
+              disabled={applying}
+            >
+              Cancel
+            </button>
           </form>
+            )}
+          </>
         )}
       </section>
     </div>

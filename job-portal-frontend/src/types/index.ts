@@ -37,6 +37,8 @@ export type ApplicationStatus =
   | "accepted"
   | "rejected";
 
+export type WorkPreference = "remote" | "on-site" | "hybrid";
+
 export interface Application {
   _id: string;
   job:
@@ -45,8 +47,21 @@ export interface Application {
   candidate:
     | { _id: string; name: string; email: string; resumeUrl?: string }
     | string;
+  fullName: string;
+  email: string;
+  phone: string;
   resumeUrl: string;
-  coverLetter?: string;
+  coverLetter: string;
+  portfolioUrl?: string;
+  highestEducation: string;
+  university?: string;
+  yearsOfExperience: number;
+  currentLocation: string;
+  expectedSalary?: number;
+  availability?: string;
+  workPreference?: WorkPreference;
+  skills: string[];
+  additionalInfo?: string;
   status: ApplicationStatus;
   createdAt: string;
 }
