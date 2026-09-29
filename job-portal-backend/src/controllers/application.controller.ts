@@ -69,7 +69,7 @@ export const getApplicationsForJob = async (req: Request, res: Response) => {
   });
 };
 
-// Employer: update an application's status
+
 // Employer: update an application's status
 export const updateApplicationStatus = async (req: Request, res: Response) => {
   try {

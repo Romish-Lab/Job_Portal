@@ -89,7 +89,7 @@ textarea {
 }
 
 .page-subtitle {
-  color: var(rgb(82, 213, 11));
+  color: var(--ink-muted);
   margin: 6px 0 0;
   font-size: 15px;
   line-height: 1.6;
@@ -1964,4 +1964,292 @@ textarea:focus {
 .pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ---------- Employer dashboard ---------- */
+
+.employer-dashboard {
+  max-width: 1100px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-header h1 {
+  margin-bottom: 0;
+}
+
+.dashboard-header .btn-primary {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.dashboard-header .btn-primary:hover,
+.dashboard-section .btn-ghost:hover {
+  text-decoration: none;
+}
+
+/* Top-level stat cards */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-stat,
+.dashboard-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+}
+
+.dashboard-stat span,
+.dashboard-status-card span {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.dashboard-stat strong {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.dashboard-stat--pending {
+  background: var(--pending-bg);
+  border-color: transparent;
+}
+
+.dashboard-stat--pending strong,
+.dashboard-stat--pending span {
+  color: var(--pending-ink);
+}
+
+/* Reviewed / accepted / rejected row */
+.dashboard-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2.25rem;
+}
+
+.dashboard-status-card {
+  border-left: 4px solid #3b4f7a;
+  padding: 0.9rem 1.25rem;
+}
+
+.dashboard-status-card strong {
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+
+.dashboard-status-card--success {
+  border-left-color: var(--success);
+  background: var(--success-bg);
+}
+
+.dashboard-status-card--danger {
+  border-left-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+/* Sections */
+.dashboard-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-section-header h2 {
+  margin-bottom: 0.15em;
+}
+
+.dashboard-section-header p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.dashboard-section-header > a {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Applications table */
+.dashboard-table-wrap {
+  overflow-x: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.dashboard-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.dashboard-table td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.dashboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dashboard-table tbody tr:hover {
+  background: var(--bg);
+}
+
+.dashboard-table td small {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.dashboard-table td:last-child {
+  text-align: right;
+}
+
+.dashboard-table .btn-ghost {
+  display: inline-block;
+  padding: 0.35em 0.9em;
+  font-size: 0.85rem;
+}
+
+/* Status pill (class = application.status) */
+.dashboard-status {
+  display: inline-block;
+  padding: 0.3em 0.8em;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+  background: var(--bg);
+  color: var(--ink-muted);
+}
+
+.dashboard-status.pending {
+  background: var(--pending-bg);
+  color: var(--pending-ink);
+}
+
+.dashboard-status.reviewed {
+  background: #e9edf5;
+  color: #3b4f7a;
+}
+
+.dashboard-status.accepted {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.dashboard-status.rejected {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Recent postings list */
+.dashboard-jobs {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-job-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-job-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-job-row:first-child {
+  padding-top: 0;
+}
+
+.dashboard-job-row h3 {
+  margin-bottom: 0.1em;
+}
+
+.dashboard-job-row p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+
+.dashboard-job-row .btn-ghost {
+  flex-shrink: 0;
+  font-size: 0.88rem;
+}
+
+.dashboard-job-row .btn-ghost:hover {
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-stats,
+  .dashboard-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-section {
+    padding: 1.1rem;
+  }
+
+  .dashboard-header {
+    align-items: flex-start;
+  }
+
+  .dashboard-job-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
