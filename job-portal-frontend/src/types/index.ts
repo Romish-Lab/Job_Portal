@@ -50,3 +50,28 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
 }
+export interface DashboardStats {
+  totalJobs: number;
+  activeJobs: number;
+  totalApplications: number;
+  pending: number;
+  reviewed: number;
+  accepted: number;
+  rejected: number;
+}
+
+export interface DashboardJobSummary {
+  _id: string;
+  title: string;
+  company: string;
+  location: string;
+  type: JobType;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface EmployerDashboardResponse {
+  stats: DashboardStats;
+  recentApplications: Application[];
+  jobs: DashboardJobSummary[];
+}

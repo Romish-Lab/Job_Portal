@@ -113,12 +113,7 @@ export default function JobApplicants() {
 
                 <a
                   className="resume-link"
-                  href={`${
-                    import.meta.env.VITE_API_URL?.replace(
-                      /\/api$/,
-                      ""
-                    ) || "http://localhost:5000"
-                  }${app.resumeUrl}`}
+                  href={`${client.defaults.baseURL}/applications/${app._id}/resume`}
                   target="_blank"
                   rel="noreferrer"
                 >
