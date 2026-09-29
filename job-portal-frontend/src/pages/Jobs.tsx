@@ -8,18 +8,27 @@ import HotJobs from "../components/HotJobs";
 
 export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // The URL is the single source of truth for filters
   const title = searchParams.get("title") || "";
   const type = searchParams.get("type") || "";
   const company = searchParams.get("company") || "";
-  const location = searchParams.get("location") || ""; // set by the footer links
+  const location = searchParams.get("location") || "";
 
   useEffect(() => {
-    const params: Record<string, string> = {};
+    const params: Record<string, string> = {
+      page: String(currentPage),
+      limit: "9",
+    };
+
     if (title) params.title = title;
     if (type) params.type = type;
     if (company) params.company = company;
@@ -27,18 +36,27 @@ export default function Jobs() {
 
     setLoading(true);
     setError("");
+
     client
       .get("/jobs", { params })
-      .then(({ data }) => setJobs(data.jobs))
+      .then(({ data }) => {
+        setJobs(data.jobs);
+        setTotalPages(data.pages || 1);
+      })
       .catch(() => setError("Couldn't load jobs. Is the backend running?"))
       .finally(() => setLoading(false));
-  }, [title, type, company, location]);
+  }, [title, type, company, location, currentPage]);
 
   const onSearch = (f: SearchFilters) => {
     const next: Record<string, string> = {};
+
     if (f.title.trim()) next.title = f.title.trim();
     if (f.type) next.type = f.type;
     if (f.company.trim()) next.company = f.company.trim();
+
+    // Reset to page 1 when searching
+    setCurrentPage(1);
+
     setSearchParams(next);
   };
 
@@ -47,31 +65,68 @@ export default function Jobs() {
       <Hero initial={{ title, type, company }} onSearch={onSearch} />
 
       <div className="home-layout">
-      <HotJobs />
-      <div className="page page-home">
-        <div className="page-header">
-          <h2>Open roles</h2>
-          <p className="page-subtitle">
-            {location
-              ? `Showing jobs in ${location}.`
-              : "Current postings from employers on Trailhead."}
-          </p>
-        </div>
+        <HotJobs />
 
-        {loading && <div className="page-loading">Loading jobs…</div>}
-        {error && <div className="form-error">{error}</div>}
-        {!loading && !error && jobs.length === 0 && (
-          <div className="empty-state">
-            No jobs match yet. Try clearing your filters.
+        <div className="page page-home">
+          <div className="page-header">
+            <h2>Open roles</h2>
+
+            <p className="page-subtitle">
+              {location
+                ? `Showing jobs in ${location}.`
+                : "Current postings from employers on Trailhead."}
+            </p>
           </div>
-        )}
 
-        <div className="job-grid">
-          {jobs.map((job) => (
-            <JobCard key={job._id} job={job} />
-          ))}
+          {loading && <div className="page-loading">Loading jobs…</div>}
+
+          {error && <div className="form-error">{error}</div>}
+
+          {!loading && !error && jobs.length === 0 && (
+            <div className="empty-state">
+              No jobs match yet. Try clearing your filters.
+            </div>
+          )}
+
+          <div className="job-grid">
+            {jobs.map((job) => (
+              <JobCard key={job._id} job={job} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {!loading && !error && totalPages > 1 && (
+            <div className="pagination">
+              <button
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                disabled={currentPage === 1}
+              >
+                ← Previous
+              </button>
+
+              {Array.from({ length: totalPages }, (_, index) => {
+                const page = index + 1;
+
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={currentPage === page ? "active" : ""}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
-      </div>
       </div>
     </div>
   );

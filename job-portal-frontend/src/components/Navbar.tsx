@@ -36,6 +36,7 @@ export default function Navbar() {
   const roleLinks =
     user?.role === "employer"
       ? [
+          { to: "/employer-dashboard", label: "Dashboard" },
           { to: "/my-jobs", label: "My postings" },
           { to: "/post-job", label: "Post a job" },
         ]

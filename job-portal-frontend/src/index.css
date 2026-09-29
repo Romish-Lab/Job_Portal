@@ -904,13 +904,13 @@ textarea:focus {
 }
 
 .header-inner {
-  max-width: 1120px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 1.25rem 1.5rem;
   min-height: 84px;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .logo {
@@ -948,16 +948,18 @@ textarea:focus {
 
 .header-menu {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 1.4rem;
+  gap: 1.2rem;
+  white-space: nowrap;
 }
 
 .main-nav a {
@@ -989,6 +991,7 @@ textarea:focus {
   padding: 0.4rem 0.95rem;
   white-space: nowrap;
 }
+
 .nav-role:hover {
   background: rgba(255, 255, 255, 0.12);
   text-decoration: none;
@@ -1930,4 +1933,35 @@ textarea:focus {
   .contact-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 35px 0;
+}
+
+.pagination button {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #f2f2f2;
+}
+
+.pagination button.active {
+  background: #111;
+  color: white;
+  border-color: #111;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

@@ -48,11 +48,25 @@ export const getApplicationsForJob = async (req: Request, res: Response) => {
   const job = await Job.findOne({ _id: req.params.jobId, employer: req.user?.id });
   if (!job) return res.status(404).json({ message: "Job not found or not yours" });
 
-  const applications = await Application.find({ job: job.id })
-    .populate("candidate", "name email resumeUrl")
-    .sort({ createdAt: -1 });
+  const pageNum = Math.max(Number(req.query.page) || 1, 1);
+  const limitNum = Math.max(Number(req.query.limit) || 10, 1);
+  const skip = (pageNum - 1) * limitNum;
 
-  res.status(200).json({ applications });
+  const [applications, total] = await Promise.all([
+    Application.find({ job: job.id })
+      .populate("candidate", "name email resumeUrl")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum),
+    Application.countDocuments({ job: job.id }),
+  ]);
+
+  res.status(200).json({
+    applications,
+    total,
+    page: pageNum,
+    pages: Math.ceil(total / limitNum),
+  });
 };
 
 // Employer: update an application's status

@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PostJob from "./pages/PostJob";
 import MyJobs from "./pages/MyJobs";
+import EmployerDashboard from "./pages/EmployerDashboard";
 import MyApplications from "./pages/MyApplications";
 import JobApplicants from "./pages/JobApplicants";
 import AdminUsers from "./pages/AdminUsers";
@@ -52,6 +53,14 @@ export default function App() {
             element={
               <ProtectedRoute allow={["employer"]}>
                 <PostJob />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employer-dashboard"
+            element={
+              <ProtectedRoute allow={["employer"]}>
+                <EmployerDashboard />
               </ProtectedRoute>
             }
           />

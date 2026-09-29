@@ -16,13 +16,18 @@ export default function JobApplicants() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchApplicants = async () => {
+  const fetchApplicants = async (page = currentPage) => {
     setLoading(true);
 
     try {
-      const { data } = await client.get(`/applications/job/${id}`);
+      const { data } = await client.get(`/applications/job/${id}`, {
+        params: { page, limit: 10 },
+      });
       setApplications(data.applications);
+      setTotalPages(data.pages || 1);
     } catch (err: any) {
       setError(err.response?.data?.message || "Couldn't load applicants.");
     } finally {
@@ -31,9 +36,13 @@ export default function JobApplicants() {
   };
 
   useEffect(() => {
-    fetchApplicants();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCurrentPage(1);
   }, [id]);
+
+  useEffect(() => {
+    fetchApplicants(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, currentPage]);
 
   const onStatusChange = async (
     appId: string,
@@ -137,6 +146,38 @@ export default function JobApplicants() {
           );
         })}
       </div>
+
+      {!loading && !error && totalPages > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            disabled={currentPage === 1}
+          >
+            ← Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, index) => {
+            const page = index + 1;
+
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={currentPage === page ? "active" : ""}
+              >
+                {page}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

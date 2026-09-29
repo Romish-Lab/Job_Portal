@@ -5,6 +5,7 @@ import {
   getJobs,
   getJobById,
   getMyJobs,
+  getEmployerDashboard,
   updateJob,
   deleteJob,
 } from "../controllers/job.controller";
@@ -14,6 +15,7 @@ const router = Router();
 
 router.get("/", getJobs);
 router.get("/mine", protect, authorize("employer"), getMyJobs);
+router.get("/dashboard", protect, authorize("employer"), getEmployerDashboard);
 router.get("/:id", getJobById);
 router.post("/", protect, authorize("employer"), uploadLogo.single("logo"), createJob);
 router.put("/:id", protect, authorize("employer"), updateJob);
