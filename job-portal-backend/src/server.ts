@@ -8,7 +8,7 @@ import authRoutes from "./routes/auth.routes";
 import jobRoutes from "./routes/job.routes";
 import userRoutes from "./routes/user.routes";
 import applicationRoutes from "./routes/application.routes";
-
+import contactRoutes from "./routes/contact.routes";
 dotenv.config();
 console.log("SMTP_HOST =", process.env.SMTP_HOST);
 
@@ -24,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/contact", contactRoutes);
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 
 // 404 handler
