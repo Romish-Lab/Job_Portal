@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { sendEmail } from "../utils/sendEmail";
+import ContactMessage from "../models/contactMessage.model"
 
 export const sendContactMessage = async (req: Request, res: Response) => {
   const { name, email, subject, message } = req.body;
@@ -20,8 +21,19 @@ export const sendContactMessage = async (req: Request, res: Response) => {
   ) {
     return res.status(400).json({ message: "Message is too long" });
   }
-  // Always log it, so you can see submissions even without SMTP configured
-  console.log("New contact message:", { name, email, subject, message });
+
+  // Save it so admins can read it in the admin panel (Messages tab)
+  try {
+    await ContactMessage.create({
+      name: name.trim(),
+      email: email.trim(),
+      subject: subject ? String(subject).trim() : undefined,
+      message: message.trim(),
+    });
+  } catch (err) {
+    console.error("Failed to save contact message:", (err as Error).message);
+    return res.status(500).json({ message: "Couldn't send your message. Please try again." });
+  }
 
   // Best-effort email: only tried if SMTP is configured, and never blocks the response
   if (process.env.SMTP_HOST && process.env.SMTP_USER) {

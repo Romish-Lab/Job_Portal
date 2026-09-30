@@ -2497,3 +2497,21 @@ label {
     grid-template-columns: 1fr 1fr;
   }
 }
+/* ---------- Admin: contact messages ---------- */
+.message-item.is-unread {
+  border-left: 3px solid var(--accent);
+}
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+.message-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-bottom: 0.75rem;
+}

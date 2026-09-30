@@ -6,6 +6,9 @@ import {
   getAdvertisements,
   getAdminPricing,
   updateAdminPricing,
+  getMessages,
+  markMessageRead,
+  deleteMessage,
 } from "../controllers/admin.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
 
@@ -20,5 +23,8 @@ router.patch("/jobs/:id/reject", rejectJob);
 router.get("/advertisements", getAdvertisements);
 router.get("/ad-pricing", getAdminPricing);
 router.put("/ad-pricing", updateAdminPricing);
+router.get("/messages", getMessages);
+router.patch("/messages/:id/read", markMessageRead);
+router.delete("/messages/:id", deleteMessage);
 
 export default router;

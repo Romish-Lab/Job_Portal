@@ -46,6 +46,7 @@ export default function Navbar() {
           ? [
               { to: "/admin/jobs", label: "Job approvals" },
               { to: "/admin/users", label: "Manage users" },
+               { to: "/admin/messages", label: "Messages" },
             ]
           : [];
 

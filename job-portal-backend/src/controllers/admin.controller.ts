@@ -5,6 +5,7 @@ import User from "../models/user.model";
 import AdPricing from "../models/adPricing.model";
 import { getPricing } from "../utils/adPricing";
 import { sendEmail } from "../utils/sendEmail";
+import ContactMessage from "../models/contactMessage.model";
 
 // Best-effort: an email problem must never fail a moderation action
 const notifyEmployer = async (employerId: unknown, subject: string, text: string) => {
@@ -156,4 +157,32 @@ export const updateAdminPricing = async (req: Request, res: Response) => {
     { new: true }
   );
   res.status(200).json({ message: "Pricing updated", currency: pricing?.currency, tiers: pricing?.tiers });
+};
+
+// ---------- Contact-us messages ----------
+
+// GET /api/admin/messages?filter=all|unread|read
+export const getMessages = async (req: Request, res: Response) => {
+  const filter = String(req.query.filter || "all");
+  const query = filter === "unread" ? { isRead: false } : filter === "read" ? { isRead: true } : {};
+  const [messages, unread, total] = await Promise.all([
+    ContactMessage.find(query).sort({ createdAt: -1 }).limit(500),
+    ContactMessage.countDocuments({ isRead: false }),
+    ContactMessage.countDocuments({}),
+  ]);
+  res.status(200).json({ messages, unread, total });
+};
+
+// PATCH /api/admin/messages/:id/read   body: { isRead?: boolean } (defaults to true)
+export const markMessageRead = async (req: Request, res: Response) => {
+  const isRead = typeof req.body?.isRead === "boolean" ? req.body.isRead : true;
+  const msg = await ContactMessage.findByIdAndUpdate(req.params.id, { isRead }, { new: true });
+  if (!msg) return res.status(404).json({ message: "Message not found" });
+  res.status(200).json({ message: "Updated", contactMessage: msg });
+};
+
+export const deleteMessage = async (req: Request, res: Response) => {
+  const msg = await ContactMessage.findByIdAndDelete(req.params.id);
+  if (!msg) return res.status(404).json({ message: "Message not found" });
+  res.status(200).json({ message: "Message deleted" });
 };
