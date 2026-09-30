@@ -2515,3 +2515,23 @@ label {
   overflow-wrap: anywhere;
   margin-bottom: 0.75rem;
 }
+
+/* ---------- Admin: manage users search + range ---------- */
+.admin-search {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font: inherit;
+}
+.admin-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.admin-users-range {
+  margin-top: 0.75rem;
+  text-align: center;
+}
