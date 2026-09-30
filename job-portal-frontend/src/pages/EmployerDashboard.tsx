@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import client from "../api/client";
 import { EmployerDashboardResponse } from "../types";
+import AdStatusBadge from "../components/AdStatusBadge";
 
 export default function EmployerDashboard() {
   const [data, setData] = useState<EmployerDashboardResponse | null>(null);
@@ -161,12 +162,26 @@ export default function EmployerDashboard() {
             jobs.map((job) => (
               <div className="dashboard-job-row" key={job._id}>
                 <div>
-                  <h3>{job.title}</h3>
+                  <h3>
+                    {job.title} <AdStatusBadge state={job.adState} />
+                  </h3>
                   <p>{job.company} · {job.location} · {job.type}</p>
                 </div>
-                <Link className="btn-ghost" to={`/jobs/${job._id}/applicants`}>
-                  Applicants
-                </Link>
+                <div className="my-job-actions">
+                  {(job.adState === "payment_required" || job.adState === "awaiting_payment") && (
+                    <Link className="btn-primary-sm" to={`/jobs/${job._id}/advertise`}>
+                      Pay for Advertisement
+                    </Link>
+                  )}
+                  {job.adState === "expired" && (
+                    <Link className="btn-primary-sm" to={`/jobs/${job._id}/advertise`}>
+                      Renew
+                    </Link>
+                  )}
+                  <Link className="btn-ghost" to={`/jobs/${job._id}/applicants`}>
+                    Applicants
+                  </Link>
+                </div>
               </div>
             ))
           )}

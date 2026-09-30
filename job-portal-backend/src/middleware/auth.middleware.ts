@@ -30,3 +30,18 @@ export const authorize = (...roles: Array<"candidate" | "employer" | "admin">) =
     next();
   };
 };
+
+// Like protect, but never rejects: attaches req.user if a valid token is present.
+// Used on public routes that show extra data to the owner/admin.
+export const optionalAuth = (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const bearer = req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : undefined;
+    const token = req.cookies?.token || bearer;
+    if (token) req.user = verifyToken(token);
+  } catch {
+    // invalid token -> treat as anonymous
+  }
+  next();
+};

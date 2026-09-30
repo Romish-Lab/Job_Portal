@@ -43,7 +43,10 @@ export default function Navbar() {
       : user?.role === "candidate"
         ? [{ to: "/my-applications", label: "My applications" }]
         : user?.role === "admin"
-          ? [{ to: "/admin/users", label: "Manage users" }]
+          ? [
+              { to: "/admin/jobs", label: "Job approvals" },
+              { to: "/admin/users", label: "Manage users" },
+            ]
           : [];
 
   return (

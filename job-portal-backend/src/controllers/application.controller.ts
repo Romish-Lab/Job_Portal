@@ -4,10 +4,10 @@ import path from "path";
 import mongoose from "mongoose";
 import Application from "../models/application.model";
 import Job from "../models/job.model";
+import { isPubliclyVisible } from "../utils/adState";
 import User from "../models/user.model";
 import { sendEmail } from "../utils/sendEmail";
 import { UPLOADS_ROOT, RESUME_DIR } from "../middleware/upload.middleware";
-
 const STATUSES = ["pending", "reviewed", "accepted", "rejected"];
 const MAX_LIMIT = 50;
 
@@ -37,7 +37,7 @@ export const applyToJob = async (req: Request, res: Response) => {
     }
 
     const job = await Job.findById(jobId);
-    if (!job || !job.isActive) {
+    if (!job || !isPubliclyVisible(job)) {
       return res.status(404).json({ message: "Job not found or closed" });
     }
 
@@ -56,7 +56,9 @@ export const applyToJob = async (req: Request, res: Response) => {
       skills,
     };
     const missing = Object.entries(required)
-      .filter(([, v]) => v === undefined || v === null || String(v).trim() === "")
+      .filter(
+        ([, v]) => v === undefined || v === null || String(v).trim() === "",
+      )
       .map(([k]) => k);
     if (missing.length > 0) {
       return res
@@ -76,7 +78,9 @@ export const applyToJob = async (req: Request, res: Response) => {
       .map((s) => s.trim())
       .filter(Boolean);
     if (skillsArray.length === 0) {
-      return res.status(400).json({ message: "Please list at least one skill" });
+      return res
+        .status(400)
+        .json({ message: "Please list at least one skill" });
     }
 
     const application = await Application.create({
@@ -249,15 +253,188 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
         );
 
         if (candidate) {
-          await sendEmail({
-            to: candidate.email,
-            subject: `Your application for ${job.title} was accepted`,
-            text: `Hi ${candidate.name},
+          // console.log(
+          //   `Sending acceptance email to ${candidate.email} for application ${application.id}`,
+          // );
+await sendEmail({
+  to: candidate.email,
+  subject: `Your application for ${job.title} was accepted 🎉`,
+  html: `
+    <div style="
+      margin: 0;
+      padding: 40px 20px;
+      background-color: #f4f7fb;
+      font-family: Arial, Helvetica, sans-serif;
+    ">
+      <div style="
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      ">
 
-Good news! Your application for "${job.title}" at ${job.company} has been accepted. The employer will contact you with next steps.
+        <!-- Header -->
+        <div style="
+          background: linear-gradient(135deg, #111827, #2563eb);
+          padding: 35px 30px;
+          text-align: center;
+          color: #ffffff;
+        ">
+          <div style="
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 12px;
+            border-radius: 50%;
+            font-size: 28px;
+            margin-bottom: 12px;
+          ">
+            ✓
+          </div>
 
-Best regards`,
-          });
+          <h1 style="
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+          ">
+            Application Accepted!
+          </h1>
+
+          <p style="
+            margin: 10px 0 0;
+            font-size: 15px;
+            color: #dbeafe;
+          ">
+            Great news about your job application
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 35px 30px;">
+
+          <p style="
+            margin: 0 0 18px;
+            font-size: 16px;
+            color: #111827;
+          ">
+            Hi <strong>${candidate.name}</strong>,
+          </p>
+
+          <p style="
+            margin: 0 0 25px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #4b5563;
+          ">
+            We're excited to let you know that your application has been
+            <strong style="color: #16a34a;">accepted</strong>!
+            The employer will contact you with the next steps.
+          </p>
+
+          <!-- Job Card -->
+          <div style="
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 22px;
+            margin: 25px 0;
+          ">
+
+            <p style="
+              margin: 0 0 8px;
+              font-size: 12px;
+              font-weight: 600;
+              color: #6b7280;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            ">
+              Position
+            </p>
+
+            <h2 style="
+              margin: 0 0 10px;
+              font-size: 21px;
+              color: #111827;
+            ">
+              ${job.title}
+            </h2>
+
+            <p style="
+              margin: 0;
+              font-size: 15px;
+              color: #4b5563;
+            ">
+              🏢 ${job.company}
+            </p>
+
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="#" style="
+              display: inline-block;
+              padding: 14px 28px;
+              background: #2563eb;
+              color: #ffffff;
+              text-decoration: none;
+              border-radius: 8px;
+              font-size: 15px;
+              font-weight: 600;
+            ">
+              View Application
+            </a>
+          </div>
+
+          <p style="
+            margin: 25px 0 0;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #6b7280;
+          ">
+            Keep an eye on your inbox for further communication from the
+            employer.
+          </p>
+
+          <p style="
+            margin: 25px 0 0;
+            font-size: 15px;
+            color: #374151;
+          ">
+            Best regards,<br>
+            <strong>Your Job Portal Team</strong>
+          </p>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="
+          background: #f8fafc;
+          border-top: 1px solid #e5e7eb;
+          padding: 20px 30px;
+          text-align: center;
+        ">
+          <p style="
+            margin: 0;
+            font-size: 12px;
+            color: #9ca3af;
+          ">
+            © 2026 Job Portal. All rights reserved.
+          </p>
+
+          <p style="
+            margin: 8px 0 0;
+            font-size: 12px;
+            color: #9ca3af;
+          ">
+            You're receiving this email because you applied for this position.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  `,
+});
         }
       } catch (err) {
         console.error("Failed to send acceptance email:", err);

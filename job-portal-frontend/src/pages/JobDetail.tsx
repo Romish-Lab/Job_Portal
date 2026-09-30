@@ -106,7 +106,7 @@ export default function JobDetail() {
       await client.post(`/applications/${id}/apply`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setMessage("Application submitted! You can track its status from My applications.");
+      setMessage("Application submitted! You can track its status from My applications and you'll receive an email confirmation if your application is accepted.");
       setForm(emptyForm);
       setResume(null);
       setShowForm(false);

@@ -13,6 +13,11 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password, role, company } = req.body;
 
+    // Only candidates and employers can self-register; admins come from `npm run seed:admin`
+    if (role !== "candidate" && role !== "employer") {
+      return res.status(400).json({ message: "Role must be candidate or employer" });
+    }
+
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "Email already registered" });

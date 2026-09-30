@@ -13,6 +13,10 @@ import EmployerDashboard from "./pages/EmployerDashboard";
 import MyApplications from "./pages/MyApplications";
 import JobApplicants from "./pages/JobApplicants";
 import AdminUsers from "./pages/AdminUsers";
+import AdminJobs from "./pages/AdminJobs";
+import PayForAd from "./pages/PayForAd";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancelled from "./pages/PaymentCancelled";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Help from "./pages/Help";
@@ -73,6 +77,30 @@ export default function App() {
             }
           />
           <Route
+            path="/jobs/:id/advertise"
+            element={
+              <ProtectedRoute allow={["employer"]}>
+                <PayForAd />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment/success"
+            element={
+              <ProtectedRoute allow={["employer"]}>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment/cancelled"
+            element={
+              <ProtectedRoute allow={["employer"]}>
+                <PaymentCancelled />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/jobs/:id/applicants"
             element={
               <ProtectedRoute allow={["employer"]}>
@@ -85,6 +113,14 @@ export default function App() {
             element={
               <ProtectedRoute allow={["candidate"]}>
                 <MyApplications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/jobs"
+            element={
+              <ProtectedRoute allow={["admin"]}>
+                <AdminJobs />
               </ProtectedRoute>
             }
           />

@@ -29,6 +29,37 @@ export interface Job {
   employer: { _id: string; name: string; company?: string } | string;
   isActive: boolean;
   createdAt: string;
+
+  // approval + paid advertisement (all set by the server)
+  approvalStatus?: ApprovalStatus;
+  paymentStatus?: PaymentStatus;
+  rejectionReason?: string;
+  adDuration?: number;
+  adStartDate?: string | null;
+  adExpiryDate?: string | null;
+  adState?: AdState; // computed by GET /jobs/mine and the dashboard
+  daysRemaining?: number;
+}
+
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
+export type PaymentStatus = "unpaid" | "paid" | "failed";
+export type AdState =
+  | "pending_approval"
+  | "rejected"
+  | "payment_required"
+  | "awaiting_payment"
+  | "active"
+  | "expiring_soon"
+  | "expired";
+
+export interface AdTier {
+  days: number;
+  price: number; // cents
+}
+
+export interface AdPricing {
+  currency: string;
+  tiers: AdTier[];
 }
 
 export type ApplicationStatus =
@@ -73,6 +104,8 @@ export interface DashboardStats {
   reviewed: number;
   accepted: number;
   rejected: number;
+  pendingApproval?: number;
+  needPayment?: number;
 }
 
 export interface DashboardJobSummary {
@@ -83,6 +116,9 @@ export interface DashboardJobSummary {
   type: JobType;
   isActive: boolean;
   createdAt: string;
+  adState?: AdState;
+  daysRemaining?: number;
+  adExpiryDate?: string | null;
 }
 
 export interface EmployerDashboardResponse {

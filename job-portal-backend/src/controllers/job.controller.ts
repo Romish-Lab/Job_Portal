@@ -2,6 +2,13 @@ import { Request, Response } from "express";
 import Job from "../models/job.model";
 import Application from "../models/application.model";
 import mongoose from "mongoose";
+import Payment from "../models/payment.model";
+import {
+  publicJobFilter,
+  isPubliclyVisible,
+  computeAdState,
+  getDaysRemaining,
+} from "../utils/adState";
 
 const JOB_TYPES = ["full-time", "part-time", "contract", "internship", "remote"];
 const MAX_LIMIT = 50;
@@ -13,8 +20,9 @@ const normalizeRequirements = (requirements: unknown): string[] =>
       ? requirements.split(",").map((r) => r.trim()).filter(Boolean)
       : [];
 
-// Only these fields may be set/changed by an employer (blocks mass assignment,
-// e.g. a candidate-crafted request trying to set `employer` or `isActive` directly)
+// Only these fields may be set/changed by an employer (blocks mass assignment).
+// approvalStatus, paymentStatus, isActive and the ad dates are NEVER taken from the
+// request: they are set by the admin-approval and Stripe payment flows only.
 const pickJobFields = (body: Record<string, any>) => {
   const out: Record<string, unknown> = {};
   for (const key of ["title", "description", "company", "location"]) {
@@ -27,7 +35,6 @@ const pickJobFields = (body: Record<string, any>) => {
   }
   if (JOB_TYPES.includes(body.type)) out.type = body.type;
   if (body.requirements !== undefined) out.requirements = normalizeRequirements(body.requirements);
-  if (body.isActive !== undefined) out.isActive = body.isActive === true || body.isActive === "true";
   return out;
 };
 
@@ -38,9 +45,12 @@ export const createJob = async (req: Request, res: Response) => {
       ...pickJobFields(req.body),
       logoUrl: req.file ? `/uploads/logos/${req.file.filename}` : undefined,
       employer: req.user?.id,
+      approvalStatus: "pending",
+      paymentStatus: "unpaid",
+      isActive: false,
     });
 
-    res.status(201).json({ message: "Job posted", job });
+    res.status(201).json({ message: "Job submitted. Waiting for admin approval.", job });
   } catch (error) {
     if ((error as any).name === "ValidationError") {
       return res.status(400).json({ message: (error as Error).message });
@@ -66,7 +76,9 @@ export const getJobs = async (req: Request, res: Response) => {
       sort,
     } = req.query;
 
-    const filter: Record<string, unknown> = { isActive: true };
+    // Visibility is enforced on every request, so expired ads disappear
+    // even if the cron sweeper hasn't run yet.
+    const filter: Record<string, unknown> = { ...publicJobFilter() };
     if (search) filter.$text = { $search: String(search) };
     if (title) filter.title = new RegExp(escapeRegex(String(title)), "i");
     if (company) filter.company = new RegExp(escapeRegex(String(company)), "i");
@@ -79,6 +91,7 @@ export const getJobs = async (req: Request, res: Response) => {
 
     const [jobs, total] = await Promise.all([
       Job.find(filter)
+        .select("-rejectionReason -reviewedBy -reviewedAt")
         .populate("employer", "name company")
         .sort(sort === "salary" ? { salaryMax: -1, salaryMin: -1 } : { createdAt: -1 })
         .skip((pageNum - 1) * limitNum)
@@ -100,6 +113,14 @@ export const getJobById = async (req: Request, res: Response) => {
     }
     const job = await Job.findById(req.params.id).populate("employer", "name company");
     if (!job) return res.status(404).json({ message: "Job not found" });
+
+    // Non-public jobs (pending/rejected/unpaid/expired) are visible only to the owner and admins
+    const employerId = String((job.employer as any)?._id ?? job.employer);
+    const isOwner = req.user?.id === employerId;
+    const isAdmin = req.user?.role === "admin";
+    if (!isPubliclyVisible(job) && !isOwner && !isAdmin) {
+      return res.status(404).json({ message: "Job not found" });
+    }
     res.status(200).json({ job });
   } catch (error) {
     console.error("getJobById error:", error);
@@ -113,7 +134,7 @@ export const getEmployerDashboard = async (req: Request, res: Response) => {
     const employerId = req.user?.id;
 
     const jobs = await Job.find({ employer: employerId })
-      .select("_id title company location type isActive createdAt")
+      .select("_id title company location type isActive approvalStatus paymentStatus adExpiryDate createdAt")
       .sort({ createdAt: -1 });
 
     const jobIds = jobs.map((job) => job._id);
@@ -135,7 +156,11 @@ export const getEmployerDashboard = async (req: Request, res: Response) => {
     res.status(200).json({
       stats: {
         totalJobs: jobs.length,
-        activeJobs: jobs.filter((job) => job.isActive).length,
+        activeJobs: jobs.filter((job) => isPubliclyVisible(job)).length,
+        pendingApproval: jobs.filter((job) => job.approvalStatus === "pending").length,
+        needPayment: jobs.filter(
+          (job) => job.approvalStatus === "approved" && !isPubliclyVisible(job),
+        ).length,
         totalApplications,
         pending,
         reviewed,
@@ -143,7 +168,11 @@ export const getEmployerDashboard = async (req: Request, res: Response) => {
         rejected,
       },
       recentApplications,
-      jobs: jobs.slice(0, 5),
+      jobs: jobs.slice(0, 5).map((job) => ({
+        ...job.toObject(),
+        adState: computeAdState(job),
+        daysRemaining: getDaysRemaining(job),
+      })),
     });
   } catch (error) {
     console.error("getEmployerDashboard error:", error);
@@ -155,7 +184,24 @@ export const getEmployerDashboard = async (req: Request, res: Response) => {
 export const getMyJobs = async (req: Request, res: Response) => {
   try {
     const jobs = await Job.find({ employer: req.user?.id }).sort({ createdAt: -1 });
-    res.status(200).json({ jobs });
+
+    // A checkout opened in the last 24h that hasn't finished yet
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const open = await Payment.find({
+      job: { $in: jobs.map((j) => j._id) },
+      status: "pending",
+      createdAt: { $gte: since },
+    }).select("job");
+    const openSet = new Set(open.map((p) => String(p.job)));
+
+    const now = new Date();
+    res.status(200).json({
+      jobs: jobs.map((j) => ({
+        ...j.toObject(),
+        adState: computeAdState(j, openSet.has(String(j._id)), now),
+        daysRemaining: getDaysRemaining(j, now),
+      })),
+    });
   } catch (error) {
     console.error("getMyJobs error:", error);
     res.status(500).json({ message: "Failed to load your jobs" });
@@ -170,7 +216,19 @@ export const updateJob = async (req: Request, res: Response) => {
     const job = await Job.findOne({ _id: req.params.id, employer: req.user?.id });
     if (!job) return res.status(404).json({ message: "Job not found or not yours" });
 
+    // A live, paid ad can't be edited: that would bypass moderation.
+    if (isPubliclyVisible(job)) {
+      return res.status(409).json({
+        message: "A live advertisement can't be edited. Contact an admin.",
+      });
+    }
+
     Object.assign(job, pickJobFields(req.body));
+    // Editing a rejected job resubmits it for review
+    if (job.approvalStatus === "rejected") {
+      job.approvalStatus = "pending";
+      job.rejectionReason = undefined;
+    }
     await job.save();
     res.status(200).json({ message: "Job updated", job });
   } catch (error) {

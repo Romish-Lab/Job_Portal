@@ -41,7 +41,9 @@ export default function PostJob() {
       if (logo) formData.append("logo", logo);
 
       await client.post("/jobs", formData);
-      navigate("/my-jobs");
+      navigate("/my-jobs", {
+        state: { message: "Job submitted. Waiting for admin approval." },
+      });
     } catch (err: any) {
       setError(err.response?.data?.message || "Couldn't create the job posting.");
     } finally {
