@@ -8,6 +8,7 @@ import JobDetail from "./pages/JobDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PostJob from "./pages/PostJob";
+import CompanyProfile from "./pages/CompanyProfile";
 import MyJobs from "./pages/MyJobs";
 import EmployerDashboard from "./pages/EmployerDashboard";
 import MyApplications from "./pages/MyApplications";
@@ -43,6 +44,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Jobs />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route path="/companies/:id" element={<CompanyProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -58,6 +60,14 @@ export default function App() {
             element={
               <ProtectedRoute allow={["employer"]}>
                 <PostJob />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs/:id/edit"
+            element={
+              <ProtectedRoute allow={["employer"]}>
+               <PostJob />
               </ProtectedRoute>
             }
           />

@@ -208,30 +208,101 @@ export const getMyJobs = async (req: Request, res: Response) => {
   }
 };
 
+import fs from "fs";
+import { getStripe } from "../utils/stripe";
+
+// ---- helpers for updateJob ----
+const sameValue = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+// A logo uploaded on a request that is then rejected must not stay on disk
+const discardUpload = (req: Request) => {
+  if (req.file) fs.unlink(req.file.path, () => {});
+};
+
+// Closes unfinished Stripe checkouts for a job. Without this, a checkout opened BEFORE an
+// edit could be paid AFTER it, and the payment flow would publish the edited content
+// without it being reviewed again.
+const closeOpenCheckouts = async (jobId: unknown) => {
+  const open = await Payment.find({ job: jobId, status: "pending" });
+  for (const p of open) {
+    if (p.stripeSessionId) {
+      try {
+        await getStripe().checkout.sessions.expire(p.stripeSessionId);
+      } catch {
+        /* already expired/completed */
+      }
+    }
+    p.status = "expired";
+    await p.save();
+  }
+};
+
+// PUT /api/jobs/:id  (JSON or multipart, so the logo can be replaced)
 export const updateJob = async (req: Request, res: Response) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
+      discardUpload(req);
       return res.status(404).json({ message: "Job not found or not yours" });
     }
     const job = await Job.findOne({ _id: req.params.id, employer: req.user?.id });
-    if (!job) return res.status(404).json({ message: "Job not found or not yours" });
+    if (!job) {
+      discardUpload(req);
+      return res.status(404).json({ message: "Job not found or not yours" });
+    }
 
     // A live, paid ad can't be edited: that would bypass moderation.
     if (isPubliclyVisible(job)) {
+      discardUpload(req);
       return res.status(409).json({
         message: "A live advertisement can't be edited. Contact an admin.",
       });
     }
 
-    Object.assign(job, pickJobFields(req.body));
-    // Editing a rejected job resubmits it for review
+    const updates: Record<string, unknown> = pickJobFields(req.body);
+    // An empty salary field in the edit form means "remove it"
+    for (const key of ["salaryMin", "salaryMax"]) {
+      if (req.body[key] === "") updates[key] = undefined;
+    }
+    if (req.file) updates.logoUrl = `/uploads/logos/${req.file.filename}`;
+
+    const changed = Object.entries(updates).some(
+      ([key, value]) => !sameValue((job as any)[key], value),
+    );
+    // Content that an admin already approved (including expired ads and approved-but-unpaid jobs)
+    const wasApproved = job.approvalStatus === "approved" || job.approvalStatus === "expired";
+
+    Object.assign(job, updates);
+
+    let resubmitted = false;
     if (job.approvalStatus === "rejected") {
+      // Editing a rejected job resubmits it for review
       job.approvalStatus = "pending";
       job.rejectionReason = undefined;
+      resubmitted = true;
+    } else if (wasApproved && changed) {
+      // Edited content must be reviewed again before it can be advertised.
+      // isActive MUST go false too: the expiry sweeper flips any isActive+paid+past-expiry
+      // job to "expired", which the checkout accepts, so it would undo this review.
+      // paymentStatus and the ad dates are kept: admin ad history and revenue depend on them.
+      job.approvalStatus = "pending";
+      job.isActive = false;
+      job.rejectionReason = undefined;
+      job.reviewedBy = undefined;
+      job.reviewedAt = undefined;
+      resubmitted = true;
+      await closeOpenCheckouts(job._id);
     }
+
     await job.save();
-    res.status(200).json({ message: "Job updated", job });
+    res.status(200).json({
+      message: resubmitted
+        ? "Changes saved. Your job is back in review; once approved you can advertise it again."
+        : "Job updated",
+      job,
+      resubmitted,
+    });
   } catch (error) {
+    discardUpload(req);
     if ((error as any).name === "ValidationError") {
       return res.status(400).json({ message: (error as Error).message });
     }

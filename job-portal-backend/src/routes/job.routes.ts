@@ -18,7 +18,8 @@ router.get("/mine", protect, authorize("employer"), getMyJobs);
 router.get("/dashboard", protect, authorize("employer"), getEmployerDashboard);
 router.get("/:id", optionalAuth, getJobById);
 router.post("/", protect, authorize("employer"), uploadLogo.single("logo"), createJob);
-router.put("/:id", protect, authorize("employer"), updateJob);
+router.put("/:id", protect, authorize("employer"), uploadLogo.single("logo"), updateJob);
+
 router.delete("/:id", protect, authorize("employer"), deleteJob);
 
 export default router;

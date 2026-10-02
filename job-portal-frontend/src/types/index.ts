@@ -34,6 +34,8 @@ export interface Job {
   approvalStatus?: ApprovalStatus;
   paymentStatus?: PaymentStatus;
   rejectionReason?: string;
+
+   reviewedAt?: string;
   adDuration?: number;
   adStartDate?: string | null;
   adExpiryDate?: string | null;
@@ -125,4 +127,14 @@ export interface EmployerDashboardResponse {
   stats: DashboardStats;
   recentApplications: Application[];
   jobs: DashboardJobSummary[];
+}
+
+// GET /api/companies/:id
+export interface CompanyProfileResponse {
+ company: { id: string; name: string; logoUrl?: string; openJobs: number };
+ jobs: Job[]; // live jobs, one page
+ total: number;
+ page: number;
+ pages: number;
+ inactiveJobs?: Job[]; // only sent to the owner
 }

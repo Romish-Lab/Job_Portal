@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import client from "../api/client";
 import { Job } from "../types";
 import AdStatusBadge from "../components/AdStatusBadge";
+import JobAdActions from "../components/JobAdActions";
 import { formatDate } from "../utils/money";
 
 // One line under each job explaining where it is in the approve -> pay -> live flow
@@ -33,12 +34,20 @@ function AdDetails({ job }: { job: Job }) {
           {job.daysRemaining}
         </p>
       );
-    case "expired":
-      return (
+    case "expired": {
+      // Reviewed after the ad ended = the employer edited it and an admin approved the edits
+      const editsApproved =
+        !!job.reviewedAt && !!job.adExpiryDate && new Date(job.reviewedAt) > new Date(job.adExpiryDate);
+      return editsApproved ? (
+        <p className="ad-note ad-note--ok">
+          <strong>Edits approved</strong> · Renew the ad to repost this job
+        </p>
+      ) : (
         <p className="ad-note">
           <strong>Advertisement Expired</strong> on {formatDate(job.adExpiryDate)}
         </p>
       );
+    }
     default:
       return null;
   }
@@ -108,16 +117,7 @@ export default function MyJobs() {
               <AdDetails job={job} />
             </div>
             <div className="my-job-actions">
-              {(job.adState === "payment_required" || job.adState === "awaiting_payment") && (
-                <Link className="btn-primary-sm" to={`/jobs/${job._id}/advertise`}>
-                  Pay for Advertisement
-                </Link>
-              )}
-              {job.adState === "expired" && (
-                <Link className="btn-primary-sm" to={`/jobs/${job._id}/advertise`}>
-                  Renew advertisement
-                </Link>
-              )}
+              <JobAdActions job={job} />
               <Link className="btn-ghost" to={`/jobs/${job._id}/applicants`}>
                 View applicants
               </Link>

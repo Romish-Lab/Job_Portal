@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import client from "../api/client";
 import { EmployerDashboardResponse } from "../types";
 import AdStatusBadge from "../components/AdStatusBadge";
+import JobAdActions from "../components/JobAdActions";
+import { useAuth } from "../context/AuthContext";
 
 export default function EmployerDashboard() {
+  const { user } = useAuth();
   const [data, setData] = useState<EmployerDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +45,14 @@ export default function EmployerDashboard() {
             Manage your job postings and keep track of applicants.
           </p>
         </div>
-        <Link className="btn-primary" to="/post-job">+ Post a job</Link>
+        <div className="my-job-actions">
+          {user && (
+            <Link className="btn-ghost" to={`/companies/${user.id}`}>
+              Company page
+            </Link>
+          )}
+          <Link className="btn-primary" to="/post-job">+ Post a job</Link>
+        </div>
       </div>
 
       <div className="dashboard-stats">
@@ -168,16 +178,7 @@ export default function EmployerDashboard() {
                   <p>{job.company} · {job.location} · {job.type}</p>
                 </div>
                 <div className="my-job-actions">
-                  {(job.adState === "payment_required" || job.adState === "awaiting_payment") && (
-                    <Link className="btn-primary-sm" to={`/jobs/${job._id}/advertise`}>
-                      Pay for Advertisement
-                    </Link>
-                  )}
-                  {job.adState === "expired" && (
-                    <Link className="btn-primary-sm" to={`/jobs/${job._id}/advertise`}>
-                      Renew
-                    </Link>
-                  )}
+                  <JobAdActions job={job} />
                   <Link className="btn-ghost" to={`/jobs/${job._id}/applicants`}>
                     Applicants
                   </Link>

@@ -13,8 +13,10 @@ import applicationRoutes from "./routes/application.routes";
 import contactRoutes from "./routes/contact.routes";
 import adminRoutes from "./routes/admin.routes";
 import paymentRoutes from "./routes/payment.routes";
+import companyroutes from "./routes/company.routes";
 import { stripeWebhook } from "./controllers/payment.controller";
 import { startAdExpiryScheduler } from "./utils/adExpiry";
+import companyRoutes from "./routes/company.routes";
 
 dotenv.config();
 
@@ -98,6 +100,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/companies", companyRoutes);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 

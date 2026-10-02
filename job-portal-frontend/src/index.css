@@ -2535,3 +2535,29 @@ label {
   margin-top: 0.75rem;
   text-align: center;
 }
+
+/* ---------- Job / company header logo (these classes had no rules before) ---------- */
+.job-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.job-detail-logo {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  object-fit: contain;
+}
+.job-detail-logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 700;
+}

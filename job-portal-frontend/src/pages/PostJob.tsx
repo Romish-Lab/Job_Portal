@@ -1,10 +1,24 @@
-import { ChangeEvent, FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import client from "../api/client";
-import { JobType } from "../types";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import client, { assetUrl } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { Job, JobType } from "../types";
 
+// Mirrors the server rule: a live, paid ad can't be edited
+const isLive = (job: Job) =>
+  job.approvalStatus === "approved" &&
+  job.paymentStatus === "paid" &&
+  job.isActive &&
+  !!job.adExpiryDate &&
+  new Date(job.adExpiryDate).getTime() > Date.now();
+
+// Used for both "Post a job" (/post-job) and "Edit job" (/jobs/:id/edit)
 export default function PostJob() {
+  const { id } = useParams();
+  const editing = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [requirements, setRequirements] = useState("");
@@ -15,8 +29,37 @@ export default function PostJob() {
   const [type, setType] = useState<JobType>("full-time");
   const [logo, setLogo] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
+  const [existing, setExisting] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(editing);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Edit mode: load the job and prefill the form
+  useEffect(() => {
+    if (!id) return;
+    client
+      .get(`/jobs/${id}`)
+      .then(({ data }) => {
+        const j: Job = data.job;
+        const ownerId = typeof j.employer === "object" ? j.employer._id : j.employer;
+        if (user && ownerId !== user.id) {
+          setLoadError("You can only edit your own job postings.");
+          return;
+        }
+        setExisting(j);
+        setTitle(j.title);
+        setDescription(j.description);
+        setRequirements((j.requirements || []).join(", "));
+        setCompany(j.company);
+        setLocation(j.location);
+        setSalaryMin(j.salaryMin != null ? String(j.salaryMin) : "");
+        setSalaryMax(j.salaryMax != null ? String(j.salaryMax) : "");
+        setType(j.type);
+      })
+      .catch((err) => setLoadError(err.response?.data?.message || "Couldn't load this job."))
+      .finally(() => setLoading(false));
+  }, [id, user]);
 
   const onLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -35,37 +78,92 @@ export default function PostJob() {
       formData.append("requirements", requirements); // comma-separated, backend splits it
       formData.append("company", company);
       formData.append("location", location);
-      if (salaryMin) formData.append("salaryMin", salaryMin);
-      if (salaryMax) formData.append("salaryMax", salaryMax);
+      // When editing, an empty salary is sent too so it can be removed
+      if (editing || salaryMin) formData.append("salaryMin", salaryMin);
+      if (editing || salaryMax) formData.append("salaryMax", salaryMax);
       formData.append("type", type);
       if (logo) formData.append("logo", logo);
 
-      await client.post("/jobs", formData);
-      navigate("/my-jobs", {
-        state: { message: "Job submitted. Waiting for admin approval." },
-      });
+      if (!editing) {
+        await client.post("/jobs", formData);
+        navigate("/my-jobs", { state: { message: "Job submitted. Waiting for admin approval." } });
+        return;
+      }
+
+      const { data } = await client.put(`/jobs/${id}`, formData);
+      const wasApproved = existing?.approvalStatus === "approved" || existing?.approvalStatus === "expired";
+      if (!data.resubmitted && wasApproved) {
+        // Nothing changed on an approved job: go straight to renewing / paying
+        navigate(`/jobs/${id}/advertise`);
+      } else {
+        navigate("/my-jobs", { state: { message: data.message } });
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Couldn't create the job posting.");
+      setError(err.response?.data?.message || `Couldn't ${editing ? "update" : "create"} the job posting.`);
     } finally {
       setBusy(false);
     }
   };
 
+  if (loading) return <div className="page-loading">Loading…</div>;
+
+  if (loadError) {
+    return (
+      <div className="page page-narrow">
+        <div className="form-error">{loadError}</div>
+        <Link to="/my-jobs">← Back to my postings</Link>
+      </div>
+    );
+  }
+
+  if (existing && isLive(existing)) {
+    return (
+      <div className="page page-narrow">
+        <div className="page-header">
+          <h1>Edit job</h1>
+        </div>
+        <div className="ad-note">
+          This job has a live advertisement and can't be edited until it ends. Contact an admin if it needs urgent changes.
+        </div>
+        <p>
+          <Link to="/my-jobs">← Back to my postings</Link>
+        </p>
+      </div>
+    );
+  }
+
+  const approvedContent = existing?.approvalStatus === "approved" || existing?.approvalStatus === "expired";
+  const shownLogo = preview || (existing?.logoUrl ? assetUrl(existing.logoUrl) : "");
+
   return (
     <div className="page page-narrow">
       <div className="page-header">
-        <h1>Post a job</h1>
-        <p className="page-subtitle">Fill in the details candidates will see.</p>
+        <h1>{editing ? "Edit job" : "Post a job"}</h1>
+        <p className="page-subtitle">
+          {editing ? "Update the details candidates will see." : "Fill in the details candidates will see."}
+        </p>
       </div>
+
+      {editing && approvedContent && (
+        <div className="ad-note">
+          Changes to an approved job are reviewed again before it can be advertised.{" "}
+          <Link to={`/jobs/${id}/advertise`}>Advertise without changes</Link>
+        </div>
+      )}
+      {editing && existing?.approvalStatus === "rejected" && (
+        <div className="ad-note ad-note--danger">
+          Rejected{existing.rejectionReason ? `: ${existing.rejectionReason}` : ""}. Saving sends it back for review.
+        </div>
+      )}
 
       <form className="stacked-form" onSubmit={onSubmit}>
         {error && <div className="form-error">{error}</div>}
 
         <label>
-          Company logo (optional, PNG/JPG/WEBP, max 2 MB)
+          Company logo ({editing ? "leave empty to keep the current one; " : "optional, "}PNG/JPG/WEBP, max 2 MB)
           <input type="file" accept=".png,.jpg,.jpeg,.webp" onChange={onLogoChange} />
         </label>
-        {preview && <img className="logo-preview" src={preview} alt="Logo preview" />}
+        {shownLogo && <img className="logo-preview" src={shownLogo} alt="Logo preview" />}
 
         <label>
           Title
@@ -119,9 +217,16 @@ export default function PostJob() {
           </select>
         </label>
 
-        <button className="btn-primary" type="submit" disabled={busy}>
-          {busy ? "Posting…" : "Post job"}
-        </button>
+        <div className="my-job-actions">
+          <button className="btn-primary" type="submit" disabled={busy}>
+            {busy ? (editing ? "Saving…" : "Posting…") : editing ? "Save changes" : "Post job"}
+          </button>
+          {editing && (
+            <Link className="btn-ghost" to="/my-jobs">
+              Cancel
+            </Link>
+          )}
+        </div>
       </form>
     </div>
   );
