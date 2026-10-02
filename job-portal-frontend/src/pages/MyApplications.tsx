@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import client from "../api/client";
 import { Application } from "../types";
 
@@ -13,6 +13,8 @@ const STATUS_LABEL: Record<string, string> = {
 export default function MyApplications() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  // Set by the apply page after a successful submission
+  const flash = (useLocation().state as { flash?: string } | null)?.flash;
 
   useEffect(() => {
     client.get("/applications/mine").then(({ data }) => {
@@ -29,6 +31,8 @@ export default function MyApplications() {
         <h1>My applications</h1>
         <p className="page-subtitle">Track the status of every job you've applied to.</p>
       </div>
+
+      {flash && <div className="form-success" style={{ marginBottom: "1rem" }}>{flash}</div>}
 
       {applications.length === 0 && (
         <div className="empty-state">

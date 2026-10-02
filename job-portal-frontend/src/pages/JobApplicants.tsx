@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
+import ApplicantPhoto from "../components/ApplicantPhoto";
 import { Application, ApplicationStatus } from "../types";
 
 const STATUSES: ApplicationStatus[] = [
@@ -92,12 +93,28 @@ export default function JobApplicants() {
       <div className="application-list">
         {applications.map((app) => (
           <div className="applicant-row" key={app._id}>
+            <ApplicantPhoto applicationId={app._id} name={app.fullName} />
+
             <div className="applicant-info">
               <h3>{app.fullName}</h3>
 
               <p className="job-row-meta">
                 {app.email} · {app.phone}
               </p>
+
+              {(app.dateOfBirth || app.gender || app.nationality) && (
+                <p className="job-row-meta">
+                  {[
+                    app.dateOfBirth && `Born ${new Date(app.dateOfBirth).toLocaleDateString()}`,
+                    app.gender && (app.gender === "prefer-not-to-say" ? "Gender not disclosed" : app.gender),
+                    app.nationality,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
+
+              {app.address && <p className="job-row-meta">{app.address}</p>}
 
               <p className="job-row-meta">
                 {app.currentLocation}

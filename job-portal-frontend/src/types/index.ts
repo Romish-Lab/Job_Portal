@@ -71,6 +71,7 @@ export type ApplicationStatus =
   | "rejected";
 
 export type WorkPreference = "remote" | "on-site" | "hybrid";
+export type Gender = "male" | "female" | "other" | "prefer-not-to-say";
 
 export interface Application {
   _id: string;
@@ -84,8 +85,13 @@ export interface Application {
   email: string;
   phone: string;
   resumeUrl: string;
+  photoUrl?: string; // older applications have no photo
   coverLetter: string;
   portfolioUrl?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  nationality?: string;
+  address?: string;
   highestEducation: string;
   university?: string;
   yearsOfExperience: number;
@@ -95,6 +101,7 @@ export interface Application {
   workPreference?: WorkPreference;
   skills: string[];
   additionalInfo?: string;
+  declarationAccepted?: boolean;
   status: ApplicationStatus;
   createdAt: string;
 }

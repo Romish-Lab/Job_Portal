@@ -7,12 +7,39 @@ import Job from "../models/job.model";
 import { isPubliclyVisible } from "../utils/adState";
 import User from "../models/user.model";
 import { sendEmail } from "../utils/sendEmail";
-import { UPLOADS_ROOT, RESUME_DIR } from "../middleware/upload.middleware";
+import {
+  UPLOADS_ROOT,
+  RESUME_DIR,
+  PHOTO_DIR,
+} from "../middleware/upload.middleware";
 const STATUSES = ["pending", "reviewed", "accepted", "rejected"];
 const MAX_LIMIT = 50;
 
-// Candidate applies to a job (resume file handled by multer -> req.file)
+const GENDERS = ["male", "female", "other", "prefer-not-to-say"];
+const WORK_PREFERENCES = ["remote", "on-site", "hybrid"];
+const MIN_AGE = 16;
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+
+// Remove files multer already wrote to disk when we reject the request afterwards
+const discardUploads = (files?: {
+  [field: string]: Express.Multer.File[];
+}) => {
+  if (!files) return;
+  Object.values(files)
+    .flat()
+    .forEach((f) => fs.unlink(f.path, () => undefined));
+};
+
+// Candidate applies to a job (resume + photo handled by multer -> req.files)
 export const applyToJob = async (req: Request, res: Response) => {
+  const files = req.files as
+    | { [field: string]: Express.Multer.File[] }
+    | undefined;
+  const reject = (status: number, message: string) => {
+    discardUploads(files);
+    return res.status(status).json({ message });
+  };
+
   try {
     const { jobId } = req.params;
     const {
@@ -21,6 +48,10 @@ export const applyToJob = async (req: Request, res: Response) => {
       phone,
       coverLetter,
       portfolioUrl,
+      dateOfBirth,
+      gender,
+      nationality,
+      address,
       highestEducation,
       university,
       yearsOfExperience,
@@ -30,30 +61,42 @@ export const applyToJob = async (req: Request, res: Response) => {
       workPreference,
       skills, // comma-separated string from the form
       additionalInfo,
+      declarationAccepted,
     } = req.body;
 
     if (!mongoose.isValidObjectId(jobId)) {
-      return res.status(400).json({ message: "Invalid job id" });
+      return reject(400, "Invalid job id");
     }
 
     const job = await Job.findById(jobId);
     if (!job || !isPubliclyVisible(job)) {
-      return res.status(404).json({ message: "Job not found or closed" });
+      return reject(404, "Job not found or closed");
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Resume file is required" });
+    const resume = files?.resume?.[0];
+    const photo = files?.photo?.[0];
+    if (!resume) return reject(400, "Resume file is required");
+    if (!photo) return reject(400, "Profile photo is required");
+    if (photo.size > MAX_PHOTO_BYTES) {
+      return reject(400, "Profile photo must be 2MB or smaller");
     }
 
     const required: Record<string, unknown> = {
       fullName,
       email,
       phone,
-      coverLetter,
+      dateOfBirth,
+      gender,
+      nationality,
+      address,
+      currentLocation,
       highestEducation,
       yearsOfExperience,
-      currentLocation,
+      expectedSalary,
+      availability,
+      workPreference,
       skills,
+      coverLetter,
     };
     const missing = Object.entries(required)
       .filter(
@@ -61,16 +104,44 @@ export const applyToJob = async (req: Request, res: Response) => {
       )
       .map(([k]) => k);
     if (missing.length > 0) {
-      return res
-        .status(400)
-        .json({ message: `Missing required field(s): ${missing.join(", ")}` });
+      return reject(400, `Missing required field(s): ${missing.join(", ")}`);
     }
 
-    const workPreferences = ["remote", "on-site", "hybrid"];
-    if (workPreference && !workPreferences.includes(workPreference)) {
-      return res.status(400).json({
-        message: `Work preference must be one of: ${workPreferences.join(", ")}`,
-      });
+    if (String(declarationAccepted) !== "true") {
+      return reject(
+        400,
+        "You must confirm that the information you provided is correct",
+      );
+    }
+
+    if (!GENDERS.includes(gender)) {
+      return reject(400, `Gender must be one of: ${GENDERS.join(", ")}`);
+    }
+    if (!WORK_PREFERENCES.includes(workPreference)) {
+      return reject(
+        400,
+        `Work preference must be one of: ${WORK_PREFERENCES.join(", ")}`,
+      );
+    }
+
+    const dob = new Date(dateOfBirth);
+    if (Number.isNaN(dob.getTime())) {
+      return reject(400, "Date of birth is not a valid date");
+    }
+    const minDob = new Date();
+    minDob.setFullYear(minDob.getFullYear() - MIN_AGE);
+    if (dob > minDob) {
+      return reject(400, `You must be at least ${MIN_AGE} years old to apply`);
+    }
+    if (dob.getFullYear() < 1900) {
+      return reject(400, "Date of birth is not a valid date");
+    }
+
+    if (Number(yearsOfExperience) < 0 || Number.isNaN(Number(yearsOfExperience))) {
+      return reject(400, "Years of experience must be a valid number");
+    }
+    if (Number(expectedSalary) < 0 || Number.isNaN(Number(expectedSalary))) {
+      return reject(400, "Expected salary must be a valid number");
     }
 
     const skillsArray = String(skills)
@@ -78,9 +149,7 @@ export const applyToJob = async (req: Request, res: Response) => {
       .map((s) => s.trim())
       .filter(Boolean);
     if (skillsArray.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Please list at least one skill" });
+      return reject(400, "Please list at least one skill");
     }
 
     const application = await Application.create({
@@ -89,27 +158,38 @@ export const applyToJob = async (req: Request, res: Response) => {
       fullName,
       email,
       phone,
-      // Stored as a relative path; served only via GET /api/applications/:id/resume
-      resumeUrl: `resumes/${req.file.filename}`,
+      // Stored as relative paths; served only via the authenticated
+      // GET /api/applications/:id/resume and /:id/photo routes
+      resumeUrl: `resumes/${resume.filename}`,
+      photoUrl: `photos/${photo.filename}`,
       coverLetter,
       portfolioUrl: portfolioUrl || undefined,
+      dateOfBirth: dob,
+      gender,
+      nationality,
+      address,
       highestEducation,
       university: university || undefined,
       yearsOfExperience: Number(yearsOfExperience),
       currentLocation,
-      expectedSalary: expectedSalary ? Number(expectedSalary) : undefined,
-      availability: availability || undefined,
-      workPreference: workPreference || undefined,
+      expectedSalary: Number(expectedSalary),
+      availability,
+      workPreference,
       skills: skillsArray,
       additionalInfo: additionalInfo || undefined,
+      declarationAccepted: true,
     });
 
     res.status(201).json({ message: "Application submitted", application });
   } catch (error: any) {
+    discardUploads(files);
     if (error.code === 11000) {
       return res
         .status(400)
         .json({ message: "You already applied to this job" });
+    }
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
     }
     console.error("Apply error:", error);
     res.status(500).json({ message: "Failed to apply" });
@@ -170,9 +250,13 @@ export const getApplicationsForJob = async (req: Request, res: Response) => {
   }
 };
 
-// Authenticated resume download: only the candidate who applied, the employer
-// who owns the job, or an admin may fetch the file.
-export const downloadResume = async (req: Request, res: Response) => {
+// Shared by the resume and photo downloads: only the candidate who applied,
+// the employer who owns the job, or an admin may fetch the files.
+const sendApplicationFile = async (
+  req: Request,
+  res: Response,
+  kind: "resume" | "photo",
+) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid application id" });
@@ -189,28 +273,36 @@ export const downloadResume = async (req: Request, res: Response) => {
     const isEmployer = String((application.job as any)?.employer) === userId;
     const isAdmin = req.user?.role === "admin";
     if (!isCandidate && !isEmployer && !isAdmin) {
-      return res
-        .status(403)
-        .json({ message: "Not allowed to view this resume" });
+      return res.status(403).json({ message: `Not allowed to view this ${kind}` });
     }
 
-    // basename() blocks path traversal; fall back to the legacy public folder for old records
-    const filename = path.basename(application.resumeUrl);
-    const candidates = [
-      path.join(RESUME_DIR, filename),
-      path.join(UPLOADS_ROOT, filename),
-    ];
+    const stored = kind === "resume" ? application.resumeUrl : application.photoUrl;
+    if (!stored) return res.status(404).json({ message: `No ${kind} on file` });
+
+    // basename() blocks path traversal; resumes also fall back to the legacy
+    // public folder for old records
+    const filename = path.basename(stored);
+    const candidates =
+      kind === "resume"
+        ? [path.join(RESUME_DIR, filename), path.join(UPLOADS_ROOT, filename)]
+        : [path.join(PHOTO_DIR, filename)];
     const file = candidates.find((f) => fs.existsSync(f));
-    if (!file)
-      return res.status(404).json({ message: "Resume file not found" });
+    if (!file) return res.status(404).json({ message: `${kind} file not found` });
 
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=3600");
     res.sendFile(file);
   } catch (error) {
-    console.error("downloadResume error:", error);
-    res.status(500).json({ message: "Failed to load resume" });
+    console.error(`download ${kind} error:`, error);
+    res.status(500).json({ message: `Failed to load ${kind}` });
   }
 };
+
+export const downloadResume = (req: Request, res: Response) =>
+  sendApplicationFile(req, res, "resume");
+
+export const downloadPhoto = (req: Request, res: Response) =>
+  sendApplicationFile(req, res, "photo");
 
 // Employer: update an application's status
 export const updateApplicationStatus = async (req: Request, res: Response) => {
@@ -243,7 +335,9 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
     const wasAccepted = application.status === "accepted";
 
     application.status = status;
-    await application.save();
+    // Applications created before the new required fields existed would fail
+    // full validation, so only validate the field we actually changed.
+    await application.save({ validateModifiedOnly: true });
 
     // Email the candidate only when the status newly becomes "accepted"
     if (status === "accepted" && !wasAccepted) {

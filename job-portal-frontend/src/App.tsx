@@ -5,6 +5,7 @@ import Footer from "./components/footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
+import ApplyJob from "./pages/ApplyJob";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PostJob from "./pages/PostJob";
@@ -44,6 +45,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Jobs />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route
+            path="/jobs/:id/apply"
+            element={
+              <ProtectedRoute allow={["candidate"]}>
+                <ApplyJob />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/companies/:id" element={<CompanyProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
