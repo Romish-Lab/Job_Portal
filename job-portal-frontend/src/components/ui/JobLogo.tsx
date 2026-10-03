@@ -1,4 +1,5 @@
 import { Briefcase } from "lucide-react";
+import { assetUrl } from "../../api/client";
 
 interface JobLogoProps {
   logoUrl?: string;
@@ -19,12 +20,10 @@ const iconSizes = {
 };
 
 export const JobLogo = ({ logoUrl, companyName, size = "md" }: JobLogoProps) => {
-  const API_URL = import.meta.env.VITE_API_URL;
-
   if (logoUrl) {
     return (
       <img
-        src={`${API_URL}${logoUrl}`}
+        src={assetUrl(logoUrl)}
         alt={companyName}
         className={`${sizeClasses[size]} rounded-lg object-cover`}
       />
