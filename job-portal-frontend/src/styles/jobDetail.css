@@ -1,0 +1,75 @@
+/* ===================================================
+   Job Detail Pages
+   =================================================== */
+
+.job-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.job-detail-logo {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  object-fit: contain;
+}
+
+.job-detail-logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.job-detail-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.job-detail-section {
+  margin-bottom: 1.75rem;
+}
+
+.job-description {
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+
+.requirement-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.requirement-list li {
+  margin-bottom: 0.25em;
+}
+
+.apply-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.apply-job-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}

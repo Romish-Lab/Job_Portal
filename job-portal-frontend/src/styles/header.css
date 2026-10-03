@@ -1,0 +1,228 @@
+/* header styles */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #172554;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.3s ease; /* added */
+}
+.site-header--hidden {
+  transform: translateY(-100%);
+}
+.header-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+.logo:hover {
+  text-decoration: none;
+}
+.logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #ffb020;
+  color: #172554;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.logo-text {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+.logo-text span {
+  color: #ffb020;
+}
+.header-menu {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  white-space: nowrap;
+}
+.main-nav a {
+  color: #c7d2fe;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.4rem 0;
+  border-bottom: 2px solid transparent;
+}
+.main-nav a:hover,
+.main-nav a.active {
+  color: #fff;
+  border-bottom-color: #ffb020;
+  text-decoration: none;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.nav-role {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  white-space: nowrap;
+}
+.nav-role:hover {
+  background: rgba(255, 255, 255, 0.12);
+  text-decoration: none;
+}
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e0e7ff;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #4338ca;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.btn-login,
+.btn-signup {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+  transition: background 0.15s,
+    border-color 0.15s;
+}
+.btn-login {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+.btn-login:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #fff;
+  text-decoration: none;
+}
+.btn-login:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+.btn-signup {
+  background: #ffb020;
+  color: #172554;
+  border: 1.5px solid #ffb020;
+}
+.btn-signup:hover {
+  background: #ffc44d;
+  border-color: #ffc44d;
+  text-decoration: none;
+}
+.btn-signup:active {
+  background: #f59e0b;
+}
+.site-header a:focus-visible,
+.site-header button:focus-visible {
+  outline: 3px solid #4338ca;
+  outline-offset: 3px;
+}
+.menu-toggle {
+  display: none;
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.menu-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+@media (max-width: 1180px) {
+  .menu-toggle {
+    display: flex;
+  }
+
+  .header-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem 1.5rem 1.5rem;
+    background: #172554;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.25);
+  }
+  .header-menu.open {
+    display: flex;
+  }
+
+  .main-nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .main-nav a {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nav-role,
+  .btn-login,
+  .btn-signup {
+    padding: 0.7rem 1.25rem;
+    text-align: center;
+  }
+  .user-chip {
+    justify-content: center;
+    padding: 0.3rem 0;
+  }
+}

@@ -41,7 +41,12 @@ export default function Navbar() {
           { to: "/post-job", label: "Post a job" },
         ]
       : user?.role === "candidate"
-        ? [{ to: "/my-applications", label: "My applications" }]
+        ? [
+            { to: "/my-applications", label: "My applications" },
+            { to: "/saved-jobs", label: "Saved jobs" },
+            { to: "/job-alerts", label: "Job alerts" },
+            { to: "/interviews", label: "Interviews" },
+          ]
         : user?.role === "admin"
           ? [
               { to: "/admin/jobs", label: "Job approvals" },

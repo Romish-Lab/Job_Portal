@@ -1,0 +1,75 @@
+/* ===================================================
+   CSS Variables & Global Styles
+   =================================================== */
+
+:root {
+  --bg: #f5f6f4;
+  --surface: #ffffff;
+  --ink: #17201f;
+  --ink-muted: #5b6864;
+  --border: #dde2df;
+  --accent: #146c5d;
+  --accent-dark: #0d4d42;
+  --gold: #b8862e;
+  --danger: #b3261e;
+  --danger-bg: #fbeceb;
+  --success: #2e7d57;
+  --success-bg: #eaf5ee;
+  --pending-bg: #f4efe3;
+  --pending-ink: #8a6a1f;
+
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0 0 0.4em;
+  color: var(--ink);
+}
+
+h1 {
+  font-size: 1.9rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.2em;
+}
+
+a {
+  color: var(--accent-dark);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}

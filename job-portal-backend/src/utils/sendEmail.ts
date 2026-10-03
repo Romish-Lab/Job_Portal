@@ -22,5 +22,6 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     to: options.to,
     subject: options.subject,
     text: options.text,
+    html: options.html,
   });
 };

@@ -8,11 +8,16 @@ import JobDetail from "./pages/JobDetail";
 import ApplyJob from "./pages/ApplyJob";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import PostJob from "./pages/PostJob";
 import CompanyProfile from "./pages/CompanyProfile";
 import MyJobs from "./pages/MyJobs";
 import EmployerDashboard from "./pages/EmployerDashboard";
 import MyApplications from "./pages/MyApplications";
+import SavedJobs from "./pages/SavedJobs";
+import JobAlerts from "./pages/JobAlerts";
+import Interviews from "./pages/Interviews";
 import JobApplicants from "./pages/JobApplicants";
 import AdminUsers from "./pages/AdminUsers";
 import AdminJobs from "./pages/AdminJobs";
@@ -56,6 +61,8 @@ export default function App() {
           <Route path="/companies/:id" element={<CompanyProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
@@ -133,6 +140,30 @@ export default function App() {
             element={
               <ProtectedRoute allow={["candidate"]}>
                 <MyApplications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved-jobs"
+            element={
+              <ProtectedRoute allow={["candidate"]}>
+                <SavedJobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-alerts"
+            element={
+              <ProtectedRoute allow={["candidate"]}>
+                <JobAlerts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/interviews"
+            element={
+              <ProtectedRoute allow={["candidate"]}>
+                <Interviews />
               </ProtectedRoute>
             }
           />

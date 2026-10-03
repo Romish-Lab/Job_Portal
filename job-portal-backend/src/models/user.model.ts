@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export type UserRole = "candidate" | "employer"| "admin";
 
@@ -10,7 +11,11 @@ export interface IUser extends Document {
   role: UserRole;
   company?: string;      // used when role = employer
   resumeUrl?: string;    // used when role = candidate
+  savedJobs?: mongoose.Types.ObjectId[];  // jobs bookmarked by candidates
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
   comparePassword(candidate: string): Promise<boolean>;
+  getResetPasswordToken(): string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -21,19 +26,30 @@ const userSchema = new Schema<IUser>(
     role: { type: String, enum: ["candidate", "employer","admin"], required: true },
     company: { type: String, trim: true },
     resumeUrl: { type: String },
+    savedJobs: [{ type: Schema.Types.ObjectId, ref: "Job" }],
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpire: { type: Date, select: false },
   },
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 userSchema.methods.comparePassword = async function (candidate: string) {
   return bcrypt.compare(candidate, this.password);
+};
+
+userSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  return resetToken;
 };
 
 export default mongoose.model<IUser>("User", userSchema);
