@@ -1,0 +1,43 @@
+# ─── Render Blueprint ────────────────────────────────────────────────────────
+# Push this file to your repo and Render will auto-detect it.
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: job-portal
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false          # set manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true  # Render generates a strong random value
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_URL
+        sync: false          # set to your Render URL, e.g. https://job-portal-xxxx.onrender.com
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: AD_CURRENCY
+        value: ""

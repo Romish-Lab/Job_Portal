@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -19,6 +20,7 @@ import jobAlertRoutes from "./routes/jobAlert.routes";
 import interviewRoutes from "./routes/interview.routes";
 import { stripeWebhook } from "./controllers/payment.controller";
 import { startAdExpiryScheduler } from "./utils/adExpiry";
+import { startJobAlertScheduler } from "./utils/jobAlertScheduler";
 
 dotenv.config();
 
@@ -109,7 +111,18 @@ app.use("/api/interviews", interviewRoutes);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 
-// 404 handler
+// ─── Serve frontend in production ──────────────────────────────────────────────
+if (isProd) {
+  const clientDist = path.join(__dirname, "..", "..", "job-portal-frontend", "dist");
+  app.use(express.static(clientDist));
+
+  // Any non-API route falls through to React Router
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
+
+// 404 handler (only fires for /api/* routes in production)
 app.use((_req, res) => res.status(404).json({ message: "Route not found" }));
 
 // Global error handler
@@ -136,6 +149,7 @@ const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
   startAdExpiryScheduler();
+  startJobAlertScheduler();
   app.listen(PORT, () =>
     console.log(`Server is up and running on http://localhost:${PORT}`),
   );

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import JobAlert from "../models/jobAlert.model";
 import User from "../models/user.model";
+import { MAX_ALERTS_PER_USER } from "../utils/jobAlertMatcher";
 
 export const createJobAlert = async (req: Request, res: Response) => {
   try {
@@ -18,6 +19,14 @@ export const createJobAlert = async (req: Request, res: Response) => {
 
     if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
       return res.status(400).json({ message: "At least one keyword is required" });
+    }
+
+    // Enforce per-user alert cap
+    const existingCount = await JobAlert.countDocuments({ user: userId });
+    if (existingCount >= MAX_ALERTS_PER_USER) {
+      return res.status(400).json({
+        message: `You can have at most ${MAX_ALERTS_PER_USER} job alerts. Please delete an existing alert before creating a new one.`,
+      });
     }
 
     const jobAlert = await JobAlert.create({

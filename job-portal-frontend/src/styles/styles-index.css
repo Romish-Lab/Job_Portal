@@ -1,0 +1,17 @@
+@import "./variables.css";
+@import "./legacy.css";
+@import "./layout.css";
+@import "./utilities.css";
+@import "./buttons.css";
+@import "./forms.css";
+@import "./header.css";
+@import "./hero.css";
+@import "./footer.css";
+@import "./jobs.css";
+@import "./jobDetail.css";
+@import "./dashboard.css";
+@import "./applications.css";
+@import "./auth.css";
+@import "./contentPages.css";
+@import "./admin.css";
+@import "./advertisements.css";

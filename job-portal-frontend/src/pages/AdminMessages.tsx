@@ -30,7 +30,9 @@ export default function AdminMessages() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await client.get("/admin/messages", { params: { filter: f } });
+      const { data } = await client.get("/admin/messages", {
+        params: { filter: f },
+      });
       setMessages(data.messages);
       setCounts({ unread: data.unread, total: data.total });
     } catch (err: any) {
@@ -85,13 +87,18 @@ export default function AdminMessages() {
       <div className="page-header">
         <h1>Messages</h1>
         <p className="page-subtitle">
-          Messages sent through the Contact Us page · {counts.unread} unread of {counts.total}
+          Messages sent through the Contact Us page · {counts.unread} unread of{" "}
+          {counts.total}
         </p>
       </div>
 
       <div className="admin-filter">
         {(["all", "unread", "read"] as Filter[]).map((f) => (
-          <button key={f} className={`btn-ghost${filter === f ? " is-selected" : ""}`} onClick={() => setFilter(f)}>
+          <button
+            key={f}
+            className={`btn-ghost${filter === f ? " is-selected" : ""}`}
+            onClick={() => setFilter(f)}
+          >
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
@@ -99,30 +106,46 @@ export default function AdminMessages() {
 
       {error && <div className="form-error">{error}</div>}
       {loading && <div className="page-loading">Loading…</div>}
-      {!loading && messages.length === 0 && <div className="empty-state">No messages here yet.</div>}
+      {!loading && messages.length === 0 && (
+        <div className="empty-state">No messages here yet.</div>
+      )}
 
       {!loading && (
         <div className="my-jobs-list">
           {messages.map((m) => (
-            <div className={`admin-job message-item${m.isRead ? "" : " is-unread"}`} key={m._id}>
+            <div
+              className={`admin-job message-item${m.isRead ? "" : " is-unread"}`}
+              key={m._id}
+            >
               <div className="admin-job-head">
                 <div>
                   <h3>
-                    {!m.isRead && <span className="unread-dot" aria-label="Unread" />}
+                    {!m.isRead && (
+                      <span className="unread-dot" aria-label="Unread" />
+                    )}
                     {m.subject || "(No subject)"}
                   </h3>
                   <p className="job-row-meta">
-                    {m.name} · <a href={`mailto:${m.email}`}>{m.email}</a> · {formatDateTime(m.createdAt)}
+                    {m.name} · <a href={`mailto:${m.email}`}>{m.email}</a> ·{" "}
+                    {formatDateTime(m.createdAt)}
                   </p>
                 </div>
                 <div className="my-job-actions">
                   <button className="btn-ghost" onClick={() => toggle(m)}>
                     {open === m._id ? "Hide" : "View"}
                   </button>
-                  <button className="btn-ghost" disabled={busyId === m._id} onClick={() => setRead(m, !m.isRead)}>
+                  <button
+                    className="btn-ghost"
+                    disabled={busyId === m._id}
+                    onClick={() => setRead(m, !m.isRead)}
+                  >
                     {m.isRead ? "Mark unread" : "Mark read"}
                   </button>
-                  <button className="btn-ghost btn-danger" disabled={busyId === m._id} onClick={() => onDelete(m)}>
+                  <button
+                    className="btn-ghost btn-danger"
+                    disabled={busyId === m._id}
+                    onClick={() => onDelete(m)}
+                  >
                     Delete
                   </button>
                 </div>
@@ -132,7 +155,9 @@ export default function AdminMessages() {
                   <p className="admin-job-desc message-body">{m.message}</p>
                   <a
                     className="btn-primary-sm"
-                    href={`mailto:${m.email}?subject=${encodeURIComponent("Re: " + (m.subject || "Your message"))}`}
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent("Re: " + (m.subject || "Your message"))}`}
+                    target="_blank"
+                    rel="noreferrer"
                   >
                     Reply by email
                   </a>

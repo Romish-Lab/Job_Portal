@@ -6,6 +6,7 @@ import User from "../models/user.model";
 import { getStripe } from "../utils/stripe";
 import { getPricing, priceForDuration } from "../utils/adPricing";
 import { isPubliclyVisible } from "../utils/adState";
+import { matchInstantAlertsForJob } from "../utils/jobAlertMatcher";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -172,6 +173,16 @@ export const activateFromSession = async (
   return first || updated.modifiedCount > 0 ? "activated" : "already";
 };
 
+// Best-effort: fire instant job-alert emails when a job goes live.
+// Runs asynchronously so it never delays webhook / confirm responses.
+const fireInstantAlerts = (jobId: unknown, outcome: string) => {
+  if (outcome === "activated") {
+    matchInstantAlertsForJob(jobId).catch((e) =>
+      console.error("[job-alerts] instant-alert trigger failed:", e)
+    );
+  }
+};
+
 // Stripe -> our server. Mounted in server.ts with express.raw() BEFORE express.json().
 export const stripeWebhook = async (req: Request, res: Response) => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -193,6 +204,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         const session = event.data.object as Stripe.Checkout.Session;
         const outcome = await activateFromSession(session);
         console.log(`[stripe] ${event.type} ${session.id} -> ${outcome}`);
+        fireInstantAlerts(session.metadata?.paymentId ? (await Payment.findById(session.metadata.paymentId))?.job : null, outcome);
         break;
       }
       case "checkout.session.async_payment_failed": {
@@ -251,7 +263,8 @@ export const confirmPayment = async (req: Request, res: Response) => {
 
     if (payment.status !== "paid") {
       const session = await getStripe().checkout.sessions.retrieve(sessionId);
-      await activateFromSession(session);
+      const outcome = await activateFromSession(session);
+      fireInstantAlerts(payment.job, outcome);
     }
 
     const fresh = await Payment.findById(payment._id);
