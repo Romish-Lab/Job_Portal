@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { Calendar, Clock, MapPin, Video, Phone, Users, CheckCircle, XCircle } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Video,
+  Phone,
+  Users,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import "../styles/Interviews.css";
-
+import { API_ORIGIN } from "../api/client";
 interface Interview {
   _id: string;
   type: "phone" | "video" | "in-person" | "technical";
@@ -45,12 +54,14 @@ const Interviews = () => {
   const fetchInterviews = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/interviews/candidate`,
-        { withCredentials: true }
+        `${API_ORIGIN}/api/interviews/candidate`,
+        { withCredentials: true },
       );
       setInterviews(data.interviews);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to fetch interviews");
+      toast.error(
+        error.response?.data?.message || "Failed to fetch interviews",
+      );
     } finally {
       setLoading(false);
     }
@@ -61,7 +72,7 @@ const Interviews = () => {
     switch (filter) {
       case "upcoming":
         return interviews.filter(
-          (i) => i.status === "scheduled" && new Date(i.scheduledDate) > now
+          (i) => i.status === "scheduled" && new Date(i.scheduledDate) > now,
         );
       case "completed":
         return interviews.filter((i) => i.status === "completed");
@@ -88,20 +99,25 @@ const Interviews = () => {
   const formatDate = (date: string) => {
     const d = new Date(date);
     const now = new Date();
-    const diffInDays = Math.floor((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const diffInDays = Math.floor(
+      (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     let prefix = "";
     if (diffInDays === 0) prefix = "Today, ";
     else if (diffInDays === 1) prefix = "Tomorrow, ";
     else if (diffInDays === -1) prefix = "Yesterday, ";
 
-    return prefix + d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return (
+      prefix +
+      d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
   };
 
   const isUpcoming = (date: string) => {
@@ -110,9 +126,11 @@ const Interviews = () => {
 
   const filteredInterviews = getFilteredInterviews();
   const upcomingCount = interviews.filter(
-    (i) => i.status === "scheduled" && new Date(i.scheduledDate) > new Date()
+    (i) => i.status === "scheduled" && new Date(i.scheduledDate) > new Date(),
   ).length;
-  const completedCount = interviews.filter((i) => i.status === "completed").length;
+  const completedCount = interviews.filter(
+    (i) => i.status === "completed",
+  ).length;
 
   if (loading) {
     return (
@@ -180,7 +198,8 @@ const Interviews = () => {
               <div
                 key={interview._id}
                 className={`interview-card ${
-                  isUpcoming(interview.scheduledDate) && interview.status === "scheduled"
+                  isUpcoming(interview.scheduledDate) &&
+                  interview.status === "scheduled"
                     ? "upcoming"
                     : ""
                 }`}
@@ -190,7 +209,7 @@ const Interviews = () => {
                   <div className="interview-logo">
                     {interview.job.logoUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_API_URL}${interview.job.logoUrl}`}
+                        src={`${API_ORIGIN}${interview.job.logoUrl}`}
                         alt={interview.job.company}
                       />
                     ) : (
@@ -205,18 +224,27 @@ const Interviews = () => {
                     <div className="interview-header">
                       <div className="interview-title-group">
                         <h3>{interview.job.title}</h3>
-                        <p className="interview-company">{interview.job.company}</p>
+                        <p className="interview-company">
+                          {interview.job.company}
+                        </p>
                       </div>
-                      <span className={`interview-status-badge ${interview.status}`}>
-                        {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                      <span
+                        className={`interview-status-badge ${interview.status}`}
+                      >
+                        {interview.status.charAt(0).toUpperCase() +
+                          interview.status.slice(1)}
                       </span>
                     </div>
 
                     {/* Interview metadata */}
                     <div className="interview-metadata">
                       <div className="interview-metadata-item">
-                        <span className="type-icon">{getInterviewIcon(interview.type)}</span>
-                        <span className="capitalize">{interview.type} Interview</span>
+                        <span className="type-icon">
+                          {getInterviewIcon(interview.type)}
+                        </span>
+                        <span className="capitalize">
+                          {interview.type} Interview
+                        </span>
                       </div>
                       <div className="interview-metadata-item">
                         <Calendar size={20} />
