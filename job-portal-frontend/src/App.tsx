@@ -31,6 +31,8 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Contact from "./pages/Contact";
 import AdminMessages from "./pages/AdminMessages";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminAudit from "./pages/AdminAudit";
 
 // Jump back to the top whenever the page changes
 function ScrollToTop() {
@@ -188,6 +190,22 @@ export default function App() {
             element={
               <ProtectedRoute allow={["admin"]}>
                 <AdminMessages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allow={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit"
+            element={
+              <ProtectedRoute allow={["admin"]}>
+                <AdminAudit />
               </ProtectedRoute>
             }
           />

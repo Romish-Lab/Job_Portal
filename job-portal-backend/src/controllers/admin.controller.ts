@@ -6,6 +6,9 @@ import AdPricing from "../models/adPricing.model";
 import { getPricing } from "../utils/adPricing";
 import { sendEmail } from "../utils/sendEmail";
 import ContactMessage from "../models/contactMessage.model";
+import mongoose from "mongoose";
+import { logAudit } from "../utils/audit";
+import { escapeRegex, parsePaging } from "../utils/adminHelpers";
 
 // Best-effort: an email problem must never fail a moderation action
 const notifyEmployer = async (employerId: unknown, subject: string, text: string) => {
@@ -41,6 +44,12 @@ export const approveJob = async (req: Request, res: Response) => {
   job.reviewedBy = req.user?.id as any;
   job.reviewedAt = new Date();
   await job.save();
+  await logAudit(req, {
+    action: "job.approve",
+    targetType: "job",
+    targetId: job.id,
+    targetLabel: `${job.title} (${job.company})`,
+  });
 
   notifyEmployer(
     job.employer,
@@ -65,6 +74,13 @@ export const rejectJob = async (req: Request, res: Response) => {
   job.reviewedAt = new Date();
   job.isActive = false;
   await job.save();
+  await logAudit(req, {
+    action: "job.reject",
+    targetType: "job",
+    targetId: job.id,
+    targetLabel: `${job.title} (${job.company})`,
+    details: reason || undefined,
+  });
 
   notifyEmployer(
     job.employer,
@@ -156,25 +172,56 @@ export const updateAdminPricing = async (req: Request, res: Response) => {
     { $set: { tiers: clean, ...(cur ? { currency: cur } : {}) } },
     { new: true }
   );
+  await logAudit(req, {
+    action: "pricing.update",
+    targetType: "pricing",
+    targetLabel: "Advertisement pricing",
+    details: clean.map((t) => `${t.days}d=${t.price}`).join(", ") + (cur ? ` (${cur})` : ""),
+  });
   res.status(200).json({ message: "Pricing updated", currency: pricing?.currency, tiers: pricing?.tiers });
 };
 
 // ---------- Contact-us messages ----------
 
-// GET /api/admin/messages?filter=all|unread|read
+// GET /api/admin/messages?filter=all|unread|read&search=&page=&limit=
 export const getMessages = async (req: Request, res: Response) => {
-  const filter = String(req.query.filter || "all");
-  const query = filter === "unread" ? { isRead: false } : filter === "read" ? { isRead: true } : {};
-  const [messages, unread, total] = await Promise.all([
-    ContactMessage.find(query).sort({ createdAt: -1 }).limit(500),
+  const { page, limit, skip } = parsePaging(req.query, 10);
+  const status = String(req.query.filter || "all");
+  const query: Record<string, any> = {};
+  if (status === "unread") query.isRead = false;
+  if (status === "read") query.isRead = true;
+
+  const search = String(req.query.search || "").trim().slice(0, 100);
+  if (search) {
+    const rx = new RegExp(escapeRegex(search), "i");
+    query.$or = [{ name: rx }, { email: rx }, { subject: rx }, { message: rx }];
+  }
+
+  const [messages, matching, unread, total] = await Promise.all([
+    ContactMessage.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ContactMessage.countDocuments(query),
     ContactMessage.countDocuments({ isRead: false }),
     ContactMessage.countDocuments({}),
   ]);
-  res.status(200).json({ messages, unread, total });
+  res.status(200).json({
+    messages,
+    unread,
+    total,
+    matching,
+    page,
+    pages: Math.max(1, Math.ceil(matching / limit)),
+  });
+};
+
+// GET /api/admin/unread-count  (used by the navbar badge)
+export const getUnreadCount = async (_req: Request, res: Response) => {
+  const unread = await ContactMessage.countDocuments({ isRead: false });
+  res.status(200).json({ unread });
 };
 
 // PATCH /api/admin/messages/:id/read   body: { isRead?: boolean } (defaults to true)
 export const markMessageRead = async (req: Request, res: Response) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Message not found" });
   const isRead = typeof req.body?.isRead === "boolean" ? req.body.isRead : true;
   const msg = await ContactMessage.findByIdAndUpdate(req.params.id, { isRead }, { new: true });
   if (!msg) return res.status(404).json({ message: "Message not found" });
@@ -182,7 +229,14 @@ export const markMessageRead = async (req: Request, res: Response) => {
 };
 
 export const deleteMessage = async (req: Request, res: Response) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Message not found" });
   const msg = await ContactMessage.findByIdAndDelete(req.params.id);
   if (!msg) return res.status(404).json({ message: "Message not found" });
+  await logAudit(req, {
+    action: "message.delete",
+    targetType: "message",
+    targetId: msg.id,
+    targetLabel: `${msg.subject || "(No subject)"} — ${msg.email}`,
+  });
   res.status(200).json({ message: "Message deleted" });
 };

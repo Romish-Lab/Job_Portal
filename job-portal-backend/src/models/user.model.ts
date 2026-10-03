@@ -14,6 +14,10 @@ export interface IUser extends Document {
   savedJobs?: mongoose.Types.ObjectId[];  // jobs bookmarked by candidates
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
+  isSuspended?: boolean;
+  suspendedReason?: string;
+  suspendedAt?: Date;
+  createdAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
   getResetPasswordToken(): string;
 }
@@ -29,6 +33,9 @@ const userSchema = new Schema<IUser>(
     savedJobs: [{ type: Schema.Types.ObjectId, ref: "Job" }],
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpire: { type: Date, select: false },
+    isSuspended: { type: Boolean, default: false, index: true },
+    suspendedReason: { type: String, trim: true, maxlength: 500 },
+    suspendedAt: { type: Date },
   },
   { timestamps: true }
 );

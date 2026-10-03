@@ -1,0 +1,124 @@
+/* ---------- Admin: dashboard, charts, users, audit ---------- */
+.nav-badge {
+  display: inline-block;
+  min-width: 1.25rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.stat-link {
+  text-decoration: none;
+  color: inherit;
+}
+.stat-link:hover {
+  border-color: var(--accent);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 2rem;
+}
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1rem 0.75rem;
+}
+.chart-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.bar-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.bar-track {
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+}
+.bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--accent);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+.bar-col:hover .bar {
+  background: var(--accent-dark);
+}
+.bar-value {
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.bar-label {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  text-transform: capitalize;
+}
+.chart-empty {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.report-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+.report-box h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+.report-box .filter-bar {
+  margin: 0.75rem 0 0;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+.row-suspended td {
+  background: var(--danger-bg);
+}
+.row-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+.audit-details {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+  color: var(--ink-muted);
+}
+
+/* contact messages */
+.message-item.is-unread { border-left: 3px solid var(--accent); padding-left: 0.75rem; }
+.unread-dot { display: inline-block; width: 8px; height: 8px; margin-right: 0.5rem; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+.message-body { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0.75rem; }

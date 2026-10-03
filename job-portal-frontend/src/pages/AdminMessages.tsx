@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import client from "../api/client";
+import Pagination from "../components/Pagination";
 import { formatDate } from "../utils/money";
 
 type Filter = "all" | "unread" | "read";
@@ -21,20 +22,37 @@ export default function AdminMessages() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [counts, setCounts] = useState({ unread: 0, total: 0 });
   const [filter, setFilter] = useState<Filter>("all");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [matching, setMatching] = useState(0);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const load = async (f: Filter = filter) => {
+  // debounce the search box
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const load = async () => {
     setLoading(true);
     setError("");
     try {
       const { data } = await client.get("/admin/messages", {
-        params: { filter: f },
+        params: { filter, search: search || undefined, page, limit: 10 },
       });
       setMessages(data.messages);
+      setPages(data.pages);
+      setMatching(data.matching);
       setCounts({ unread: data.unread, total: data.total });
+      window.dispatchEvent(new Event("messages-updated")); // refresh the navbar badge
     } catch (err: any) {
       setError(err.response?.data?.message || "Couldn't load messages.");
     } finally {
@@ -43,10 +61,10 @@ export default function AdminMessages() {
   };
 
   useEffect(() => {
-    load(filter);
+    load();
     setOpen(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, search, page]);
 
   const setRead = async (m: ContactMessage, isRead: boolean) => {
     setBusyId(m._id);
@@ -87,8 +105,7 @@ export default function AdminMessages() {
       <div className="page-header">
         <h1>Messages</h1>
         <p className="page-subtitle">
-          Messages sent through the Contact Us page · {counts.unread} unread of{" "}
-          {counts.total}
+          Messages sent through the Contact Us page · {counts.unread} unread of {counts.total}
         </p>
       </div>
 
@@ -97,55 +114,51 @@ export default function AdminMessages() {
           <button
             key={f}
             className={`btn-ghost${filter === f ? " is-selected" : ""}`}
-            onClick={() => setFilter(f)}
+            onClick={() => {
+              setFilter(f);
+              setPage(1);
+            }}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
 
+      <div className="filter-bar">
+        <input
+          type="search"
+          placeholder="Search name, email, subject or message…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+      </div>
+
       {error && <div className="form-error">{error}</div>}
       {loading && <div className="page-loading">Loading…</div>}
-      {!loading && messages.length === 0 && (
-        <div className="empty-state">No messages here yet.</div>
-      )}
+      {!loading && messages.length === 0 && <div className="empty-state">No messages here yet.</div>}
 
       {!loading && (
         <div className="my-jobs-list">
           {messages.map((m) => (
-            <div
-              className={`admin-job message-item${m.isRead ? "" : " is-unread"}`}
-              key={m._id}
-            >
+            <div className={`admin-job message-item${m.isRead ? "" : " is-unread"}`} key={m._id}>
               <div className="admin-job-head">
                 <div>
                   <h3>
-                    {!m.isRead && (
-                      <span className="unread-dot" aria-label="Unread" />
-                    )}
+                    {!m.isRead && <span className="unread-dot" aria-label="Unread" />}
                     {m.subject || "(No subject)"}
                   </h3>
                   <p className="job-row-meta">
-                    {m.name} · <a href={`mailto:${m.email}`}>{m.email}</a> ·{" "}
-                    {formatDateTime(m.createdAt)}
+                    {m.name} · <a href={`mailto:${m.email}`}>{m.email}</a> · {formatDateTime(m.createdAt)}
                   </p>
                 </div>
                 <div className="my-job-actions">
                   <button className="btn-ghost" onClick={() => toggle(m)}>
                     {open === m._id ? "Hide" : "View"}
                   </button>
-                  <button
-                    className="btn-ghost"
-                    disabled={busyId === m._id}
-                    onClick={() => setRead(m, !m.isRead)}
-                  >
+                  <button className="btn-ghost" disabled={busyId === m._id} onClick={() => setRead(m, !m.isRead)}>
                     {m.isRead ? "Mark unread" : "Mark read"}
                   </button>
-                  <button
-                    className="btn-ghost btn-danger"
-                    disabled={busyId === m._id}
-                    onClick={() => onDelete(m)}
-                  >
+                  <button className="btn-ghost btn-danger" disabled={busyId === m._id} onClick={() => onDelete(m)}>
                     Delete
                   </button>
                 </div>
@@ -155,9 +168,7 @@ export default function AdminMessages() {
                   <p className="admin-job-desc message-body">{m.message}</p>
                   <a
                     className="btn-primary-sm"
-                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent("Re: " + (m.subject || "Your message"))}`}
-                    target="_blank"
-                    rel="noreferrer"
+                    href={`mailto:${m.email}?subject=${encodeURIComponent("Re: " + (m.subject || "Your message"))}`}
                   >
                     Reply by email
                   </a>
@@ -167,6 +178,9 @@ export default function AdminMessages() {
           ))}
         </div>
       )}
+
+      {!loading && matching > 0 && <p className="job-row-meta">{matching} matching message{matching === 1 ? "" : "s"}</p>}
+      <Pagination page={page} pages={pages} onChange={setPage} />
     </div>
   );
 }

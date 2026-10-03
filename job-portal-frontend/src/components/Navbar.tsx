@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import client from "../api/client";
+import "../styles/admin-dashboard.css";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -8,6 +10,7 @@ export default function Navbar() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   // close the mobile menu whenever the page changes
   useEffect(() => {
@@ -28,12 +31,37 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  // unread contact-message badge for admins (every minute, on navigation, and when Messages changes)
+  useEffect(() => {
+    if (user?.role !== "admin") {
+      setUnread(0);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { data } = await client.get("/admin/unread-count");
+        if (!cancelled) setUnread(data.unread);
+      } catch {
+        /* badge is optional */
+      }
+    };
+    load();
+    const id = setInterval(load, 60000);
+    window.addEventListener("messages-updated", load);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      window.removeEventListener("messages-updated", load);
+    };
+  }, [user?.role, pathname]);
+
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
 
-  const roleLinks =
+  const roleLinks: { to: string; label: string; badge?: number }[] =
     user?.role === "employer"
       ? [
           { to: "/employer-dashboard", label: "Dashboard" },
@@ -49,9 +77,11 @@ export default function Navbar() {
           ]
         : user?.role === "admin"
           ? [
+              { to: "/admin/dashboard", label: "Dashboard" },
               { to: "/admin/jobs", label: "Job approvals" },
               { to: "/admin/users", label: "Manage users" },
-               { to: "/admin/messages", label: "Messages" },
+              { to: "/admin/messages", label: "Messages", badge: unread },
+              { to: "/admin/audit", label: "Audit log" },
             ]
           : [];
 
@@ -98,6 +128,7 @@ export default function Navbar() {
             {roleLinks.map((l) => (
               <Link key={l.to} to={l.to} className="nav-role">
                 {l.label}
+                {l.badge ? <span className="nav-badge">{l.badge > 99 ? "99+" : l.badge}</span> : null}
               </Link>
             ))}
 

@@ -9,6 +9,8 @@ interface AdminUser {
   name: string;
   email: string;
   role: string;
+  isSuspended?: boolean;
+  suspendedReason?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -43,6 +45,7 @@ export default function AdminUsers() {
   const [counts, setCounts] = useState({ all: 0, employer: 0, candidate: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const requestId = useRef(0); // ignore responses from outdated requests
 
   useEffect(() => {
@@ -84,6 +87,25 @@ export default function AdminUsers() {
     setPage(1);
   };
 
+  const onSuspend = async (u: AdminUser, suspend: boolean) => {
+    const id = (u._id || u.id) as string;
+    let body: object | undefined;
+    if (suspend) {
+      const reason = window.prompt(`Suspend ${u.name}? Reason (optional, shown to the user at login):`);
+      if (reason === null) return;
+      body = { reason };
+    }
+    setError("");
+    setNotice("");
+    try {
+      await client.patch(`/users/${id}/${suspend ? "suspend" : "unsuspend"}`, body);
+      setNotice(`${u.name} ${suspend ? "suspended" : "reinstated"}.`);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Action failed.");
+    }
+  };
+
   const onDelete = async (id: string) => {
     if (!confirm("Delete this user? This can't be undone.")) return;
     try {
@@ -103,7 +125,7 @@ export default function AdminUsers() {
     <div className="page">
       <div className="page-header">
         <h1>Manage users</h1>
-        <p className="page-subtitle">Browse, search, and remove candidates and employers.</p>
+        <p className="page-subtitle">Browse, search, suspend, and remove candidates and employers.</p>
       </div>
 
       <div className="admin-filter">
@@ -121,22 +143,23 @@ export default function AdminUsers() {
       <input
         type="search"
         className="admin-search"
-        placeholder="Search users by name…"
+        placeholder="Search by name, email or company…"
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
-        aria-label="Search users by name"
+        aria-label="Search users"
       />
 
+      {notice && <div className="form-success">{notice}</div>}
       {error && <div className="form-error">{error}</div>}
 
       <table className="admin-table">
         <thead>
-          <tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
           {!loading && users.length === 0 && (
             <tr>
-              <td colSpan={4}>
+              <td colSpan={5}>
                 <div className="empty-state">
                   {search ? `No users match “${search}”.` : "No users found."}
                 </div>
@@ -144,15 +167,27 @@ export default function AdminUsers() {
             </tr>
           )}
           {users.map((u) => (
-            <tr key={u._id || u.id} style={{ opacity: loading ? 0.5 : 1 }}>
+            <tr key={u._id || u.id} className={u.isSuspended ? "row-suspended" : ""} style={{ opacity: loading ? 0.5 : 1 }}>
               <td>{u.name}</td>
               <td>{u.email}</td>
               <td><span className="role-tag">{u.role}</span></td>
               <td>
+                {u.isSuspended ? (
+                  <span className="status-badge status-rejected" title={u.suspendedReason || ""}>Suspended</span>
+                ) : (
+                  <span className="status-badge status-accepted">Active</span>
+                )}
+              </td>
+              <td className="row-actions">
                 {u.role !== "admin" && (
-                  <button className="btn-ghost btn-danger" onClick={() => onDelete((u._id || u.id) as string)}>
-                    Delete
-                  </button>
+                  <>
+                    <button className="btn-ghost" onClick={() => onSuspend(u, !u.isSuspended)}>
+                      {u.isSuspended ? "Reinstate" : "Suspend"}
+                    </button>
+                    <button className="btn-ghost btn-danger" onClick={() => onDelete((u._id || u.id) as string)}>
+                      Delete
+                    </button>
+                  </>
                 )}
               </td>
             </tr>

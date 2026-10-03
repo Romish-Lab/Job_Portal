@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken, TokenPayload } from "../utils/jwt";
+import User from "../models/user.model";
 
-// Verifies the JWT (from the "token" cookie or Authorization header) and attaches req.user
-export const protect = (req: Request, res: Response, next: NextFunction) => {
+// Verifies the JWT (from the "token" cookie or Authorization header), then checks the
+// account still exists and isn't suspended. Attaches req.user (role comes from the DB).
+export const protect = async (req: Request, res: Response, next: NextFunction) => {
+  let decoded: TokenPayload;
   try {
     const bearer = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.split(" ")[1]
@@ -12,12 +15,21 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
     if (!token) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-
-    const decoded: TokenPayload = verifyToken(token);
-    req.user = decoded;
-    next();
+    decoded = verifyToken(token);
   } catch (error) {
     return res.status(401).json({ message: "Invalid or expired token" });
+  }
+
+  try {
+    const user = await User.findById(decoded.id).select("role isSuspended");
+    if (!user) return res.status(401).json({ message: "Account no longer exists" });
+    if (user.isSuspended) {
+      return res.status(403).json({ message: "Your account has been suspended" });
+    }
+    req.user = { id: decoded.id, role: user.role };
+    next();
+  } catch (error) {
+    next(error);
   }
 };
 
