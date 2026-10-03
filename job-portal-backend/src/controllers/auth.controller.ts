@@ -3,7 +3,7 @@ import User from "../models/user.model";
 import { signToken } from "../utils/jwt";
 import { sendEmail } from "../utils/sendEmail";
 import crypto from "crypto";
-
+import mongoose from "mongoose";
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -45,7 +45,20 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select("+password");
-    if (!user || !(await user.comparePassword(password))) {
+    const passwordOk = user ? await user.comparePassword(password) : false;
+
+    // TEMPORARY debugging: shows in the server terminal only. Delete once login works.
+    // console.log(
+    //   `[login] email=${JSON.stringify(email)} typedPasswordLength=${String(password ?? "").length} ` +
+    //     `database="${mongoose.connection.name}" -> ` +
+    //     (!user
+    //       ? "NO USER with this email in this database"
+    //       : passwordOk
+    //         ? `OK (role=${user.role})`
+    //         : `user found (role=${user.role}) but PASSWORD DOES NOT MATCH`)
+    // );
+
+    if (!user || !passwordOk) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
