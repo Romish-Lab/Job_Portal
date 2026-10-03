@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { Bell, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { API_ORIGIN } from "../api/client";
 import "../styles/JobAlerts.css";
 
 interface JobAlert {
@@ -45,7 +46,7 @@ const JobAlerts = () => {
 
   const fetchAlerts = async () => {
     try {
-      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/job-alerts`, {
+      const { data } = await axios.get(`${API_ORIGIN}/api/job-alerts`, {
         withCredentials: true,
       });
       setAlerts(data.alerts);
@@ -75,13 +76,13 @@ const JobAlerts = () => {
 
       if (editingAlert) {
         await axios.put(
-          `${import.meta.env.VITE_API_URL}/api/job-alerts/${editingAlert._id}`,
+          `${API_ORIGIN}/api/job-alerts/${editingAlert._id}`,
           payload,
           { withCredentials: true }
         );
         toast.success("Job alert updated successfully");
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/job-alerts`, payload, {
+        await axios.post(`${API_ORIGIN}/api/job-alerts`, payload, {
           withCredentials: true,
         });
         toast.success("Job alert created successfully");
@@ -98,7 +99,7 @@ const JobAlerts = () => {
     if (!confirm("Are you sure you want to delete this job alert?")) return;
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/job-alerts/${alertId}`, {
+      await axios.delete(`${API_ORIGIN}/api/job-alerts/${alertId}`, {
         withCredentials: true,
       });
       toast.success("Job alert deleted");
@@ -111,7 +112,7 @@ const JobAlerts = () => {
   const handleToggle = async (alertId: string) => {
     try {
       await axios.patch(
-        `${import.meta.env.VITE_API_URL}/api/job-alerts/${alertId}/toggle`,
+        `${API_ORIGIN}/api/job-alerts/${alertId}/toggle`,
         {},
         { withCredentials: true }
       );

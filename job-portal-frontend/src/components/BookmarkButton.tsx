@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { Bookmark } from "lucide-react";
+import { API_ORIGIN } from "../api/client";
 
 interface BookmarkButtonProps {
   jobId: string;
@@ -20,7 +21,7 @@ const BookmarkButton = ({ jobId, className = "", showText = false }: BookmarkBut
   const checkIfSaved = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/saved-jobs/check/${jobId}`,
+        `${API_ORIGIN}/api/saved-jobs/check/${jobId}`,
         { withCredentials: true }
       );
       setIsSaved(data.isSaved);
@@ -37,14 +38,14 @@ const BookmarkButton = ({ jobId, className = "", showText = false }: BookmarkBut
     setLoading(true);
     try {
       if (isSaved) {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/saved-jobs/${jobId}`, {
+        await axios.delete(`${API_ORIGIN}/api/saved-jobs/${jobId}`, {
           withCredentials: true,
         });
         setIsSaved(false);
         toast.success("Job removed from saved");
       } else {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/saved-jobs/${jobId}`,
+          `${API_ORIGIN}/api/saved-jobs/${jobId}`,
           {},
           { withCredentials: true }
         );

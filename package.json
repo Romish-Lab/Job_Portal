@@ -4,8 +4,8 @@
   "private": true,
   "description": "MERN Job Portal — monorepo root",
   "scripts": {
-    "install:backend": "cd job-portal-backend && npm install",
-    "install:frontend": "cd job-portal-frontend && npm install",
+    "install:backend": "cd job-portal-backend && npm install --include=dev",
+    "install:frontend": "cd job-portal-frontend && npm install --include=dev",
     "install:all": "npm run install:backend && npm run install:frontend",
     "build:backend": "cd job-portal-backend && npm run build",
     "build:frontend": "cd job-portal-frontend && npm run build",

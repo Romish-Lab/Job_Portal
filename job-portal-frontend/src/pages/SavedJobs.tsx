@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { Bookmark, MapPin, Clock, DollarSign, Briefcase, X } from "lucide-react";
+import { API_ORIGIN } from "../api/client";
 import "../styles/SavedJobs.css";
 
 interface Job {
@@ -31,7 +32,7 @@ const SavedJobs = () => {
 
   const fetchSavedJobs = async () => {
     try {
-      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/saved-jobs`, {
+      const { data } = await axios.get(`${API_ORIGIN}/api/saved-jobs`, {
         withCredentials: true,
       });
       setSavedJobs(data.savedJobs);
@@ -44,7 +45,7 @@ const SavedJobs = () => {
 
   const handleUnsaveJob = async (jobId: string) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/saved-jobs/${jobId}`, {
+      await axios.delete(`${API_ORIGIN}/api/saved-jobs/${jobId}`, {
         withCredentials: true,
       });
       setSavedJobs(savedJobs.filter((job) => job._id !== jobId));
@@ -126,7 +127,7 @@ const SavedJobs = () => {
                   <div className="job-logo">
                     {job.logoUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_API_URL}${job.logoUrl}`}
+                        src={`${API_ORIGIN}${job.logoUrl}`}
                         alt={job.company}
                       />
                     ) : (
