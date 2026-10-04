@@ -1,20 +1,22 @@
 import { Router } from "express";
-import { protect } from "../middleware/auth.middleware";
+import { protect, authorize } from "../middleware/auth.middleware";
 import {
   saveJob,
   unsaveJob,
   getSavedJobs,
+  getSavedJobIds,
   checkIfJobSaved,
 } from "../controllers/savedJob.controller";
 
 const router = Router();
 
-// All routes require authentication
-router.use(protect);
+// Saved jobs are a candidate feature
+router.use(protect, authorize("candidate"));
 
 router.get("/", getSavedJobs);
+router.get("/ids", getSavedJobIds);
+router.get("/check/:jobId", checkIfJobSaved);
 router.post("/:jobId", saveJob);
 router.delete("/:jobId", unsaveJob);
-router.get("/check/:jobId", checkIfJobSaved);
 
 export default router;

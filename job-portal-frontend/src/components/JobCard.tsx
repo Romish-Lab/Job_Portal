@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Job } from "../types";
 import { assetUrl } from "../api/client";
+import BookmarkButton from "./BookmarkButton";
 
 const GRADIENTS = [
   "linear-gradient(135deg, #146c5d, #3fb59a)",
@@ -30,6 +31,7 @@ export default function JobCard({ job }: { job: Job }) {
   const salary = formatSalary(job);
 
   return (
+    <div className="job-tile-wrap">
     <Link to={`/jobs/${job._id}`} className="job-tile">
       <div
         className="tile-media"
@@ -56,5 +58,7 @@ export default function JobCard({ job }: { job: Job }) {
         </div>
       </div>
     </Link>
+    <BookmarkButton jobId={job._id} />
+    </div>
   );
 }

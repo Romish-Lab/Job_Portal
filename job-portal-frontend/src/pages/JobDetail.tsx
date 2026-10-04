@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Job } from "../types";
 import { useAuth } from "../context/AuthContext";
+import BookmarkButton from "../components/BookmarkButton";
+import "../styles/Bookmark.css";
 import client, { assetUrl } from "../api/client";
 
 export default function JobDetail() {
@@ -79,9 +81,12 @@ export default function JobDetail() {
               You'll be taken to a separate page to fill in your details, upload
               your photo and resume, and submit your application.
             </p>
-            <Link className="btn-primary" to={`/jobs/${job._id}/apply`}>
-              Apply now
-            </Link>
+            <div className="apply-actions">
+              <Link className="btn-primary" to={`/jobs/${job._id}/apply`}>
+                Apply now
+              </Link>
+              <BookmarkButton jobId={job._id} showText />
+            </div>
           </>
         )}
       </section>

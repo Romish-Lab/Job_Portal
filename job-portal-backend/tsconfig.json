@@ -12,7 +12,7 @@
     "moduleResolution": "node",
     "ignoreDeprecations": "5.0"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../job-portal-frontend/src/utils/salary.ts"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "files": true

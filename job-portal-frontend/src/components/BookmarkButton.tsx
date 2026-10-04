@@ -1,84 +1,51 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Bookmark } from "lucide-react";
-import { API_ORIGIN } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { useSavedJobs } from "../context/SavedJobsContext";
+import "../styles/Bookmark.css";
 
-interface BookmarkButtonProps {
+interface Props {
   jobId: string;
+  showText?: boolean; // "Save" / "Saved" label next to the icon
   className?: string;
-  showText?: boolean;
 }
 
-const BookmarkButton = ({ jobId, className = "", showText = false }: BookmarkButtonProps) => {
-  const [isSaved, setIsSaved] = useState(false);
-  const [loading, setLoading] = useState(false);
+export default function BookmarkButton({ jobId, showText = false, className = "" }: Props) {
+  const { user } = useAuth();
+  const { isSaved, toggle, busyId } = useSavedJobs();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    checkIfSaved();
-  }, [jobId]);
+  // Employers and admins can't save jobs
+  if (user && user.role !== "candidate") return null;
 
-  const checkIfSaved = async () => {
-    try {
-      const { data } = await axios.get(
-        `${API_ORIGIN}/api/saved-jobs/check/${jobId}`,
-        { withCredentials: true }
-      );
-      setIsSaved(data.isSaved);
-    } catch (error) {
-      // User might not be logged in, silently fail
-      setIsSaved(false);
-    }
-  };
+  const saved = isSaved(jobId);
 
-  const handleToggleSave = async (e: React.MouseEvent) => {
+  const onClick = (e: MouseEvent) => {
+    // The button sits on top of a card that is a link: don't follow it
     e.preventDefault();
     e.stopPropagation();
-
-    setLoading(true);
-    try {
-      if (isSaved) {
-        await axios.delete(`${API_ORIGIN}/api/saved-jobs/${jobId}`, {
-          withCredentials: true,
-        });
-        setIsSaved(false);
-        toast.success("Job removed from saved");
-      } else {
-        await axios.post(
-          `${API_ORIGIN}/api/saved-jobs/${jobId}`,
-          {},
-          { withCredentials: true }
-        );
-        setIsSaved(true);
-        toast.success("Job saved successfully");
-      }
-    } catch (error: any) {
-      const message = error.response?.data?.message || "Failed to update saved status";
-      toast.error(message);
-    } finally {
-      setLoading(false);
+    if (!user) {
+      toast("Log in as a candidate to save jobs");
+      navigate("/login");
+      return;
     }
+    toggle(jobId);
   };
 
   return (
     <button
-      onClick={handleToggleSave}
-      disabled={loading}
-      className={`flex items-center gap-2 transition-all ${
-        isSaved
-          ? "text-emerald-500 hover:text-emerald-600"
-          : "text-gray-400 hover:text-emerald-500"
-      } ${loading ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
-      title={isSaved ? "Remove from saved" : "Save for later"}
+      type="button"
+      className={`bookmark-btn${saved ? " is-saved" : ""}${showText ? " with-text" : ""} ${className}`}
+      onClick={onClick}
+      disabled={busyId === jobId}
+      aria-pressed={saved}
+      aria-label={saved ? "Remove from saved jobs" : "Save job"}
+      title={saved ? "Remove from saved jobs" : "Save for later"}
     >
-      <Bookmark
-        className={`h-5 w-5 transition-all ${isSaved ? "fill-current" : ""}`}
-      />
-      {showText && (
-        <span className="text-sm font-medium">{isSaved ? "Saved" : "Save"}</span>
-      )}
+      <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
+      {showText && <span>{saved ? "Saved" : "Save job"}</span>}
     </button>
   );
-};
-
-export default BookmarkButton;
+}

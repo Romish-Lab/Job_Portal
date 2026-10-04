@@ -1,125 +1,99 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import User from "../models/user.model";
 import Job from "../models/job.model";
+import { isPubliclyVisible } from "../utils/adState";
+
+// Candidates only (enforced in the routes). Saving is idempotent: saving twice or
+// removing twice both succeed, so a double-click or a second tab can't cause errors.
 
 export const saveJob = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.role !== "candidate") {
-      return res.status(403).json({ message: "Only candidates can save jobs" });
-    }
+    if (!mongoose.isValidObjectId(jobId)) return res.status(404).json({ message: "Job not found" });
 
     const job = await Job.findById(jobId);
-    if (!job) {
-      return res.status(404).json({ message: "Job not found" });
-    }
+    // Only jobs candidates can currently see may be saved (hides pending/rejected/expired ones)
+    if (!job || !isPubliclyVisible(job)) return res.status(404).json({ message: "Job not found" });
 
-    // Check if job is already saved
-    if (user.savedJobs?.some((id) => id.toString() === jobId)) {
-      return res.status(400).json({ message: "Job already saved" });
-    }
-
-    user.savedJobs = user.savedJobs || [];
-    user.savedJobs.push(job._id);
-    await user.save();
-
-    res.status(200).json({ message: "Job saved successfully", savedJobs: user.savedJobs });
+    await User.updateOne({ _id: req.user?.id }, { $addToSet: { savedJobs: job._id } });
+    res.status(200).json({ message: "Job saved successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Failed to save job", error: (error as Error).message });
+    console.error("saveJob error:", error);
+    res.status(500).json({ message: "Failed to save job" });
   }
 };
 
 export const unsaveJob = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = req.user?.id;
+    if (!mongoose.isValidObjectId(jobId)) return res.status(404).json({ message: "Job not found" });
 
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (!user.savedJobs || user.savedJobs.length === 0) {
-      return res.status(400).json({ message: "No saved jobs found" });
-    }
-
-    const initialLength = user.savedJobs.length;
-    user.savedJobs = user.savedJobs.filter((id) => id.toString() !== jobId);
-
-    if (user.savedJobs.length === initialLength) {
-      return res.status(400).json({ message: "Job was not saved" });
-    }
-
-    await user.save();
-
-    res.status(200).json({ message: "Job removed from saved", savedJobs: user.savedJobs });
+    await User.updateOne({ _id: req.user?.id }, { $pull: { savedJobs: jobId } });
+    res.status(200).json({ message: "Job removed from saved" });
   } catch (error) {
-    res.status(500).json({ message: "Failed to unsave job", error: (error as Error).message });
+    console.error("unsaveJob error:", error);
+    res.status(500).json({ message: "Failed to unsave job" });
+  }
+};
+
+// Just the ids: the job cards use this to know which bookmarks to fill in (one request per page).
+export const getSavedJobIds = async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById(req.user?.id).select("savedJobs");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ ids: (user.savedJobs || []).map((id) => id.toString()) });
+  } catch (error) {
+    console.error("getSavedJobIds error:", error);
+    res.status(500).json({ message: "Failed to get saved jobs" });
   }
 };
 
 export const getSavedJobs = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const user = await User.findById(userId).populate({
+    const user = await User.findById(req.user?.id).populate({
       path: "savedJobs",
-      populate: {
-        path: "employer",
-        select: "name company",
-      },
+      populate: { path: "employer", select: "name company" },
     });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const now = new Date();
+    const savedJobs = ((user.savedJobs || []) as any[])
+      .filter(Boolean) // a deleted job leaves a null behind
+      .map((job) => {
+        const available = isPubliclyVisible(job, now);
+        if (available) {
+          const { rejectionReason, reviewedBy, reviewedAt, ...safe } = job.toObject();
+          return { ...safe, available: true };
+        }
+        // Expired / unpublished: keep the entry so the user sees it, but reveal nothing private
+        return {
+          _id: job._id,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          type: job.type,
+          logoUrl: job.logoUrl,
+          createdAt: job.createdAt,
+          available: false,
+        };
+      });
 
-    res.status(200).json({
-      savedJobs: user.savedJobs || [],
-      count: user.savedJobs?.length || 0,
-    });
+    res.status(200).json({ savedJobs, count: savedJobs.length });
   } catch (error) {
-    res.status(500).json({ message: "Failed to get saved jobs", error: (error as Error).message });
+    console.error("getSavedJobs error:", error);
+    res.status(500).json({ message: "Failed to get saved jobs" });
   }
 };
 
 export const checkIfJobSaved = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const isSaved = user.savedJobs?.some((id) => id.toString() === jobId) || false;
-
-    res.status(200).json({ isSaved });
+    const user = await User.findById(req.user?.id).select("savedJobs");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ isSaved: (user.savedJobs || []).some((id) => id.toString() === jobId) });
   } catch (error) {
-    res.status(500).json({ message: "Failed to check saved status", error: (error as Error).message });
+    console.error("checkIfJobSaved error:", error);
+    res.status(500).json({ message: "Failed to check saved status" });
   }
 };

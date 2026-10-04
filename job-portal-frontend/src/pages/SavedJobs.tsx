@@ -16,6 +16,7 @@ interface Job {
   salaryMax?: number;
   logoUrl?: string;
   createdAt: string;
+  available?: boolean;
   employer?: {
     name: string;
     company: string;
@@ -139,9 +140,13 @@ const SavedJobs = () => {
 
                   {/* Job details */}
                   <div className="job-info">
-                    <Link to={`/jobs/${job._id}`} className="job-title">
-                      {job.title}
-                    </Link>
+                    {job.available === false ? (
+                      <span className="job-title">{job.title}</span>
+                    ) : (
+                      <Link to={`/jobs/${job._id}`} className="job-title">
+                        {job.title}
+                      </Link>
+                    )}
                     <p className="job-company">{job.company}</p>
 
                     {/* Job metadata */}
@@ -165,14 +170,18 @@ const SavedJobs = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="job-actions">
-                      <Link to={`/jobs/${job._id}`} className="btn-view-details">
-                        View Details
-                      </Link>
-                      <Link to={`/jobs/${job._id}/apply`} className="btn-apply-now">
-                        Apply Now
-                      </Link>
-                    </div>
+                    {job.available === false ? (
+                      <p className="job-company">This job is no longer available.</p>
+                    ) : (
+                      <div className="job-actions">
+                        <Link to={`/jobs/${job._id}`} className="btn-view-details">
+                          View Details
+                        </Link>
+                        <Link to={`/jobs/${job._id}/apply`} className="btn-apply-now">
+                          Apply Now
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
