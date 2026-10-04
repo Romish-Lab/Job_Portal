@@ -4,6 +4,7 @@ export interface SearchFilters {
   title: string;
   type: string;
   company: string;
+  location: string;
 }
 
 const CATEGORIES = [
@@ -40,17 +41,19 @@ export default function Hero({
   const [title, setTitle] = useState(initial.title);
   const [type, setType] = useState(initial.type);
   const [company, setCompany] = useState(initial.company);
+  const [location, setLocation] = useState(initial.location);
 
   // keep the bar in sync when the URL changes (e.g. footer "browse by" links)
   useEffect(() => {
     setTitle(initial.title);
     setType(initial.type);
     setCompany(initial.company);
-  }, [initial.title, initial.type, initial.company]);
+    setLocation(initial.location);
+  }, [initial.title, initial.type, initial.company, initial.location]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    onSearch({ title, type, company });
+    onSearch({ title, type, company, location });
   };
 
   return (
@@ -67,13 +70,33 @@ export default function Hero({
       <div className="landing-hero-inner">
         <p className="hero-eyebrow">Your next career move starts here</p>
         <h1>
-          Find jobs, vacancy, career{" "}
-          <span className="hero-accent">online.</span>
+          Find work that moves you{" "}
+          <span className="hero-accent">forward.</span>
         </h1>
         <p className="hero-sub">
-          Search open roles from employers, apply in a few clicks, and track
-          every application in one place.
+          Discover open roles, apply with your profile, and keep every
+          application organized in one place.
         </p>
+        <div className="hero-perks" aria-label="What you can do on Trailhead Jobs">
+          <span>
+            <Icon>
+              <path d="m5 12 4 4L19 6" />
+            </Icon>
+            Explore open roles
+          </span>
+          <span>
+            <Icon>
+              <path d="m5 12 4 4L19 6" />
+            </Icon>
+            Apply with your profile
+          </span>
+          <span>
+            <Icon>
+              <path d="m5 12 4 4L19 6" />
+            </Icon>
+            Track your progress
+          </span>
+        </div>
       </div>
 
       <div className="hero-search-wrap">
@@ -123,6 +146,19 @@ export default function Hero({
               placeholder="Company"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
+            />
+          </label>
+
+          <label className="search-field">
+            <Icon>
+              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0Z" />
+              <circle cx="12" cy="10" r="3" />
+            </Icon>
+            <input
+              aria-label="Location"
+              placeholder="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
             />
           </label>
 

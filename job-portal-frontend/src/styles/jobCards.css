@@ -1,0 +1,514 @@
+/* ===================================================
+   Job cards + "Highest paying jobs" widget
+   (loaded last, so it wins over the old .job-tile / .hot-card rules)
+   =================================================== */
+
+/* ---------- job grid ---------- */
+.job-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.4rem;
+}
+
+/* ---------- job card ---------- */
+/* .jc-wrap holds the link (.jc) and the bookmark button, so both lift together */
+.jc-wrap {
+  position: relative;
+  display: flex;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.jc-wrap:hover,
+.jc-wrap:focus-within {
+  transform: translateY(-6px);
+}
+.jc {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(23, 32, 31, 0.04);
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+.jc:hover,
+.jc:focus-visible {
+  border-color: transparent;
+  box-shadow: 0 20px 40px -14px rgba(23, 32, 31, 0.3);
+  text-decoration: none;
+}
+
+.jc-cover {
+  position: relative;
+  height: 96px;
+  background: var(--jc-bg);
+  overflow: hidden;
+}
+/* soft decorative circles */
+.jc-cover::before,
+.jc-cover::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+}
+.jc-cover::before {
+  width: 160px;
+  height: 160px;
+  right: -44px;
+  top: -80px;
+}
+.jc-cover::after {
+  width: 96px;
+  height: 96px;
+  left: -34px;
+  bottom: -56px;
+  background: rgba(255, 255, 255, 0.11);
+}
+
+/* type pill + "New" / "1w ago" pill sit side by side, top-left */
+.jc-pills {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 56px; /* keep clear of the bookmark button */
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.jc-type,
+.jc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.jc-type {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink);
+}
+.jc-badge {
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+.jc-badge-new {
+  background: #17201f;
+  color: #ffd36b;
+}
+
+/* arrow bubble that slides in on hover */
+.jc-go {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  opacity: 0;
+  transform: translate(-8px, 8px);
+  transition: opacity 0.2s, transform 0.25s;
+}
+.jc-wrap:hover .jc-go,
+.jc-wrap:focus-within .jc-go {
+  opacity: 1;
+  transform: none;
+}
+
+/* logo overlaps the cover and the body */
+.jc-logo {
+  position: relative;
+  z-index: 2;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 18px;
+  border-radius: 16px;
+  background: #fff;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: transform 0.25s;
+}
+.jc-wrap:hover .jc-logo {
+  transform: scale(1.06) rotate(-3deg);
+}
+.jc-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+}
+.jc-initial {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: var(--jc-bg);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.jc-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.7rem 1.15rem 1.1rem;
+}
+.jc-main {
+  flex: 1;
+}
+.jc-title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.jc-company {
+  margin: 0.15rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.jc-desc {
+  margin: 0.6rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.jc-tags {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.jc-tag {
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(20, 108, 93, 0.09);
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: 600;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jc-tag-more {
+  background: var(--bg);
+  color: var(--ink-muted);
+}
+
+.jc-foot {
+  margin-top: 0.95rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.jc-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+.jc-where svg {
+  flex: none;
+}
+.jc-where span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jc-salary {
+  flex: none;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: var(--success);
+  font-weight: 700;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+/* ---------- bookmark button on the card cover ---------- */
+.jc-wrap > .jc-bookmark {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  z-index: 3;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.jc-wrap > .jc-bookmark:hover {
+  transform: scale(1.1);
+  border-color: transparent;
+}
+.jc-wrap > .jc-bookmark.is-saved {
+  background: #17201f;
+  color: #ffd36b;
+  border-color: transparent;
+}
+.jc-bookmark.is-saved svg {
+  animation: jc-pop 0.35s ease;
+}
+@keyframes jc-pop {
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+/* ---------- "Highest paying jobs" widget ---------- */
+.hot-jobs {
+  border-radius: 20px;
+  padding: 1.15rem;
+  box-shadow: 0 14px 34px -18px rgba(23, 32, 31, 0.28);
+}
+.hot-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.95rem;
+}
+.hot-head h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+.hj-sub {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+}
+.hj-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, #f2a516, #f7d36b);
+  box-shadow: 0 6px 14px -6px rgba(242, 165, 22, 0.8);
+}
+
+.hj-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 230px;
+  padding: 1.15rem;
+  border-radius: 16px;
+  overflow: hidden;
+  color: #fff;
+  background: var(--hj-bg);
+  box-shadow: 0 16px 30px -16px rgba(0, 0, 0, 0.55);
+  animation: hj-in 0.45s ease;
+}
+/* the global a:hover underline was leaking onto every line of the card */
+.hj-card:hover,
+.hj-card:focus-visible {
+  color: #fff;
+  text-decoration: none;
+  filter: brightness(1.04);
+}
+.hj-rank {
+  position: absolute;
+  right: -4px;
+  top: -18px;
+  font-family: var(--font-display);
+  font-size: 7rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.17);
+  pointer-events: none;
+}
+.hj-pill {
+  align-self: flex-start;
+  position: relative;
+  padding: 0.18rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.hj-title {
+  position: relative;
+  margin: 0.85rem 0 0.15rem;
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hj-company {
+  position: relative;
+  margin: 0;
+  opacity: 0.93;
+  font-size: 0.92rem;
+}
+.hj-salary {
+  position: relative;
+  margin-top: auto;
+  padding-top: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.hj-salary small {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.hj-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+}
+.hj-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.hj-where span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hj-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-weight: 700;
+  transition: background 0.2s, gap 0.2s;
+}
+.hj-card:hover .hj-cta {
+  background: rgba(255, 255, 255, 0.38);
+  gap: 0.5rem;
+}
+.hj-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.85);
+  transform-origin: left;
+  animation: hj-bar linear forwards;
+}
+
+.hot-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.hot-nav .hot-dots {
+  margin: 0;
+  flex-wrap: wrap;
+}
+.hj-arrow {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hj-arrow:hover {
+  background: var(--ink);
+  color: #fff;
+}
+
+@keyframes hj-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes hj-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jc-wrap,
+  .jc,
+  .jc-logo,
+  .jc-go,
+  .jc-bookmark.is-saved svg,
+  .hj-card,
+  .hj-progress {
+    animation: none;
+    transition: none;
+  }
+}

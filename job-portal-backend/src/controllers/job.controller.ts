@@ -11,13 +11,15 @@ import {
 } from "../utils/adState";
 
 const JOB_TYPES = ["full-time", "part-time", "contract", "internship", "remote"];
+const WORK_MODES = ["on-site", "hybrid", "remote"];
+const EXPERIENCE_LEVELS = ["entry-level", "mid-level", "senior-level", "lead"];
 const MAX_LIMIT = 50;
 
-const normalizeRequirements = (requirements: unknown): string[] =>
-  Array.isArray(requirements)
-    ? requirements.map((r) => String(r).trim()).filter(Boolean)
-    : typeof requirements === "string"
-      ? requirements.split(",").map((r) => r.trim()).filter(Boolean)
+const normalizeStringList = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : typeof value === "string"
+      ? value.split(/[,\r\n]+/).map((item) => item.trim()).filter(Boolean)
       : [];
 
 // Only these fields may be set/changed by an employer (blocks mass assignment).
@@ -34,7 +36,13 @@ const pickJobFields = (body: Record<string, any>) => {
     }
   }
   if (JOB_TYPES.includes(body.type)) out.type = body.type;
-  if (body.requirements !== undefined) out.requirements = normalizeRequirements(body.requirements);
+  if (WORK_MODES.includes(body.workMode)) out.workMode = body.workMode;
+  if (EXPERIENCE_LEVELS.includes(body.experienceLevel)) out.experienceLevel = body.experienceLevel;
+  if (typeof body.educationRequirement === "string") {
+    out.educationRequirement = body.educationRequirement.trim();
+  }
+  if (body.requirements !== undefined) out.requirements = normalizeStringList(body.requirements);
+  if (body.benefits !== undefined) out.benefits = normalizeStringList(body.benefits);
   return out;
 };
 
@@ -261,6 +269,9 @@ export const updateJob = async (req: Request, res: Response) => {
     const updates: Record<string, unknown> = pickJobFields(req.body);
     // An empty salary field in the edit form means "remove it"
     for (const key of ["salaryMin", "salaryMax"]) {
+      if (req.body[key] === "") updates[key] = undefined;
+    }
+    for (const key of ["workMode", "experienceLevel", "educationRequirement"]) {
       if (req.body[key] === "") updates[key] = undefined;
     }
     if (req.file) updates.logoUrl = `/uploads/logos/${req.file.filename}`;

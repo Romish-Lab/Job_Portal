@@ -1,6 +1,8 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 export type JobType = "full-time" | "part-time" | "contract" | "internship" | "remote";
+export type WorkMode = "on-site" | "hybrid" | "remote";
+export type ExperienceLevel = "entry-level" | "mid-level" | "senior-level" | "lead";
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
 export type PaymentStatus = "unpaid" | "paid" | "failed";
 
@@ -14,6 +16,10 @@ export interface IJob extends Document {
   salaryMin?: number;
   salaryMax?: number;
   type: JobType;
+  workMode?: WorkMode;
+  experienceLevel?: ExperienceLevel;
+  educationRequirement?: string;
+  benefits: string[];
   employer: Types.ObjectId;
 
   // --- moderation ---
@@ -42,6 +48,10 @@ const jobSchema = new Schema<IJob>(
     logoUrl: { type: String },
     salaryMin: { type: Number },
     salaryMax: { type: Number },
+    workMode: { type: String, enum: ["on-site", "hybrid", "remote"] },
+    experienceLevel: { type: String, enum: ["entry-level", "mid-level", "senior-level", "lead"] },
+    educationRequirement: { type: String, trim: true },
+    benefits: [{ type: String, trim: true }],
     type: {
       type: String,
       enum: ["full-time", "part-time", "contract", "internship", "remote"],

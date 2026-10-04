@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import client, { assetUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-import { Job, JobType } from "../types";
+import { ExperienceLevel, Job, JobType, WorkMode } from "../types";
 
 // Mirrors the server rule: a live, paid ad can't be edited
 const isLive = (job: Job) =>
@@ -27,6 +27,10 @@ export default function PostJob() {
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
   const [type, setType] = useState<JobType>("full-time");
+  const [workMode, setWorkMode] = useState<WorkMode | "">("");
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | "">("");
+  const [educationRequirement, setEducationRequirement] = useState("");
+  const [benefits, setBenefits] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [existing, setExisting] = useState<Job | null>(null);
@@ -56,6 +60,10 @@ export default function PostJob() {
         setSalaryMin(j.salaryMin != null ? String(j.salaryMin) : "");
         setSalaryMax(j.salaryMax != null ? String(j.salaryMax) : "");
         setType(j.type);
+        setWorkMode(j.workMode || "");
+        setExperienceLevel(j.experienceLevel || "");
+        setEducationRequirement(j.educationRequirement || "");
+        setBenefits((j.benefits || []).join(", "));
       })
       .catch((err) => setLoadError(err.response?.data?.message || "Couldn't load this job."))
       .finally(() => setLoading(false));
@@ -82,6 +90,10 @@ export default function PostJob() {
       if (editing || salaryMin) formData.append("salaryMin", salaryMin);
       if (editing || salaryMax) formData.append("salaryMax", salaryMax);
       formData.append("type", type);
+      formData.append("workMode", workMode);
+      formData.append("experienceLevel", experienceLevel);
+      formData.append("educationRequirement", educationRequirement);
+      formData.append("benefits", benefits);
       if (logo) formData.append("logo", logo);
 
       if (!editing) {
@@ -215,6 +227,50 @@ export default function PostJob() {
             <option value="internship">Internship</option>
             <option value="remote">Remote</option>
           </select>
+        </label>
+
+        <div className="form-row">
+          <label>
+            Work arrangement
+            <select value={workMode} onChange={(e) => setWorkMode(e.target.value as WorkMode | "")}>
+              <option value="">Not specified</option>
+              <option value="on-site">On-site</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="remote">Remote</option>
+            </select>
+          </label>
+          <label>
+            Experience level
+            <select
+              value={experienceLevel}
+              onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevel | "")}
+            >
+              <option value="">Not specified</option>
+              <option value="entry-level">Entry level</option>
+              <option value="mid-level">Mid level</option>
+              <option value="senior-level">Senior level</option>
+              <option value="lead">Lead</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Education requirement
+          <input
+            placeholder="e.g. Bachelor's degree or equivalent experience"
+            value={educationRequirement}
+            onChange={(e) => setEducationRequirement(e.target.value)}
+          />
+        </label>
+
+        <label>
+          Benefits (comma-separated)
+          <textarea
+            rows={3}
+            placeholder="Health insurance, paid leave, professional development"
+            value={benefits}
+            onChange={(e) => setBenefits(e.target.value)}
+          />
         </label>
 
         <div className="my-job-actions">

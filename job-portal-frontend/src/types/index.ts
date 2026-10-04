@@ -15,6 +15,9 @@ export type JobType =
   | "internship"
   | "remote";
 
+export type WorkMode = "on-site" | "hybrid" | "remote";
+export type ExperienceLevel = "entry-level" | "mid-level" | "senior-level" | "lead";
+
 export interface Job {
   _id: string;
   title: string;
@@ -26,6 +29,10 @@ export interface Job {
   salaryMin?: number;
   salaryMax?: number;
   type: JobType;
+  workMode?: WorkMode;
+  experienceLevel?: ExperienceLevel;
+  educationRequirement?: string;
+  benefits?: string[];
   employer: { _id: string; name: string; company?: string } | string;
   isActive: boolean;
   createdAt: string;

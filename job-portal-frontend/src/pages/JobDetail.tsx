@@ -61,6 +61,43 @@ export default function JobDetail() {
         </section>
       )}
 
+      {(job.workMode || job.experienceLevel || job.educationRequirement) && (
+        <section className="job-detail-section">
+          <h2>Job details</h2>
+          <dl className="job-facts">
+            {job.workMode && (
+              <div>
+                <dt>Work arrangement</dt>
+                <dd>{job.workMode.replace("-", " ")}</dd>
+              </div>
+            )}
+            {job.experienceLevel && (
+              <div>
+                <dt>Experience level</dt>
+                <dd>{job.experienceLevel.replace(/-/g, " ")}</dd>
+              </div>
+            )}
+            {job.educationRequirement && (
+              <div>
+                <dt>Education</dt>
+                <dd>{job.educationRequirement}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
+
+      {!!job.benefits?.length && (
+        <section className="job-detail-section">
+          <h2>Benefits</h2>
+          <ul className="requirement-list">
+            {job.benefits.map((benefit, i) => (
+              <li key={i}>{benefit}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="job-detail-section apply-section">
         <h2>Apply</h2>
 

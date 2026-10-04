@@ -12,6 +12,7 @@ export default function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totalJobs, setTotalJobs] = useState(0);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,6 +42,7 @@ export default function Jobs() {
       .get("/jobs", { params })
       .then(({ data }) => {
         setJobs(data.jobs);
+        setTotalJobs(data.total || 0);
         setTotalPages(data.pages || 1);
       })
       .catch(() => setError("Couldn't load jobs. Is the backend running?"))
@@ -53,6 +55,7 @@ export default function Jobs() {
     if (f.title.trim()) next.title = f.title.trim();
     if (f.type) next.type = f.type;
     if (f.company.trim()) next.company = f.company.trim();
+    if (f.location.trim()) next.location = f.location.trim();
 
     // Reset to page 1 when searching
     setCurrentPage(1);
@@ -62,20 +65,29 @@ export default function Jobs() {
 
   return (
     <div className="home">
-      <Hero initial={{ title, type, company }} onSearch={onSearch} />
+      <Hero initial={{ title, type, company, location }} onSearch={onSearch} />
 
       <div className="home-layout">
         <HotJobs />
 
         <div className="page page-home">
-          <div className="page-header">
-            <h2>Open roles</h2>
+          <div className="page-header jobs-section-header">
+            <div className="jobs-section-copy">
+              <p className="jobs-section-kicker">The latest opportunities</p>
+              <h2>Find your next role</h2>
 
-            <p className="page-subtitle">
-              {location
-                ? `Showing jobs in ${location}.`
-                : "Current postings from employers on Trailhead."}
-            </p>
+              <p className="page-subtitle">
+                {location
+                  ? `Showing jobs in ${location}.`
+                  : "Explore openings from employers on Trailhead."}
+              </p>
+            </div>
+            {!loading && !error && (
+              <div className="jobs-count" aria-label={`${totalJobs} open roles`}>
+                <span className="jobs-count-number">{totalJobs.toLocaleString()}</span>
+                <span className="jobs-count-label">open roles</span>
+              </div>
+            )}
           </div>
 
           {loading && <div className="page-loading">Loading jobs…</div>}
