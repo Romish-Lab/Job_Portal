@@ -67,6 +67,7 @@ export default function Navbar() {
           { to: "/employer-dashboard", label: "Dashboard" },
           { to: "/my-jobs", label: "My postings" },
           { to: "/post-job", label: "Post a job" },
+          { to: "/interviews", label: "Interviews" },
         ]
       : user?.role === "candidate"
         ? [

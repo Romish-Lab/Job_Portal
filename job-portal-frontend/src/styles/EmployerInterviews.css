@@ -1,0 +1,39 @@
+/* Schedule / reschedule / complete dialogs + employer interviews list */
+.si-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+}
+.si-dialog {
+  width: 100%;
+  max-width: 520px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.si-dialog h2 { margin: 0 0 0.35rem; font-size: 1.25rem; }
+.si-hint { margin: 0 0 1rem; color: var(--ink-muted); font-size: 0.88rem; }
+.si-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+.si-grid label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; font-weight: 500; }
+.si-wide { grid-column: 1 / -1; }
+.si-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem; }
+
+.applicant-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; min-width: 150px; }
+.applicant-actions .btn-primary-sm { text-align: center; }
+
+.ei-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+.ei-filters .is-selected { border-color: var(--accent); color: var(--accent-dark); }
+.ei-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
+
+@media (max-width: 560px) {
+  .si-grid { grid-template-columns: 1fr; }
+}

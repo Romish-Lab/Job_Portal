@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import client from "../api/client";
 import ApplicantPhoto from "../components/ApplicantPhoto";
+import ScheduleInterviewModal from "../components/ScheduleInterviewModal";
+import "../styles/EmployerInterviews.css";
 import { Application, ApplicationStatus } from "../types";
 
 const STATUSES: ApplicationStatus[] = [
@@ -19,6 +21,8 @@ export default function JobApplicants() {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [scheduling, setScheduling] = useState<Application | null>(null);
+  const [flash, setFlash] = useState("");
 
   const fetchApplicants = async (page = currentPage) => {
     setLoading(true);
@@ -83,6 +87,12 @@ export default function JobApplicants() {
           Review candidates and update their status.
         </p>
       </div>
+
+      {flash && (
+        <div className="form-success">
+          {flash} <Link to="/interviews">View all interviews</Link>
+        </div>
+      )}
 
       {applications.length === 0 && (
         <div className="empty-state">
@@ -164,22 +174,36 @@ export default function JobApplicants() {
               </a>
             </div>
 
-            <select
-              className="status-select"
-              value={app.status}
-              onChange={(e) =>
-                onStatusChange(
-                  app._id,
-                  e.target.value as ApplicationStatus
-                )
-              }
-            >
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+            <div className="applicant-actions">
+              <select
+                className="status-select"
+                value={app.status}
+                onChange={(e) =>
+                  onStatusChange(
+                    app._id,
+                    e.target.value as ApplicationStatus
+                  )
+                }
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              {app.status !== "rejected" && (
+                <button
+                  type="button"
+                  className="btn-primary-sm"
+                  onClick={() => {
+                    setFlash("");
+                    setScheduling(app);
+                  }}
+                >
+                  Schedule interview
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -214,6 +238,19 @@ export default function JobApplicants() {
             Next →
           </button>
         </div>
+      )}
+
+      {scheduling && (
+        <ScheduleInterviewModal
+          mode="create"
+          heading={`Schedule interview with ${scheduling.fullName}`}
+          applicationId={scheduling._id}
+          onClose={() => setScheduling(null)}
+          onDone={(message) => {
+            setScheduling(null);
+            setFlash(message);
+          }}
+        />
       )}
     </div>
   );
