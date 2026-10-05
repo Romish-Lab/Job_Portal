@@ -41,7 +41,12 @@ const applicationSchema = new Schema<IApplication>(
 
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
-    phone: { type: String, required: true, trim: true },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+      match: [/^\d{10}$/, "Phone number must contain exactly 10 digits"],
+    },
     resumeUrl: { type: String, required: true },
     photoUrl: { type: String, required: true },
     coverLetter: { type: String, required: true, trim: true },

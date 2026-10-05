@@ -167,6 +167,10 @@ export default function ApplyJob() {
       setError(`${missing[1]} is required.`);
       return;
     }
+    if (!/^\d{10}$/.test(form.phone)) {
+      setError("Phone number must contain exactly 10 digits.");
+      return;
+    }
     if (form.dateOfBirth > maxDob) {
       setError(`You must be at least ${MIN_AGE} years old to apply.`);
       return;
@@ -276,7 +280,21 @@ export default function ApplyJob() {
 
             <label>
               Phone number *
-              <input type="tel" value={form.phone} onChange={setField("phone")} required />
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={form.phone}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                  }))
+                }
+                maxLength={10}
+                pattern="[0-9]{10}"
+                title="Enter exactly 10 digits."
+                required
+              />
             </label>
 
             <label>

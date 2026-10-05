@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import client from "../api/client";
 import "../styles/admin-dashboard.css";
@@ -9,28 +10,12 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const [unread, setUnread] = useState(0);
 
   // close the mobile menu whenever the page changes
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
-  // hide the header when scrolling down, show it again when scrolling up
-  useEffect(() => {
-    let lastY = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (y < 80)
-        setHidden(false); // always show near the top
-      else if (y > lastY + 5)
-        setHidden(true); // scrolling down
-      else if (y < lastY - 5) setHidden(false); // scrolling up
-      lastY = y;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
   // unread contact-message badge for admins (every minute, on navigation, and when Messages changes)
   useEffect(() => {
     if (user?.role !== "admin") {
@@ -87,9 +72,7 @@ export default function Navbar() {
           : [];
 
   return (
-    <header
-      className={`site-header${hidden && !open ? " site-header--hidden" : ""}`}
-    >
+    <header className="site-header">
       <div className="header-inner">
         <Link to="/" className="logo">
           <span className="logo-mark">T</span>
@@ -97,6 +80,18 @@ export default function Navbar() {
             Trailhead <span>Jobs</span>
           </span>
         </Link>
+
+        {user && (
+          <button
+            type="button"
+            className="quick-logout"
+            aria-label="Log out"
+            onClick={handleLogout}
+          >
+            <LogOut size={16} aria-hidden="true" />
+            <span>Log out</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -139,11 +134,11 @@ export default function Navbar() {
                   <span className="user-avatar">
                     {user.name.charAt(0).toUpperCase()}
                   </span>
-                  {user.name.split(" ")[0]}
+                  <span className="user-name">{user.name.split(" ")[0]}</span>
                 </span>
                 <button
                   type="button"
-                  className="btn-login"
+                  className="btn-login btn-logout-menu"
                   onClick={handleLogout}
                 >
                   Log out

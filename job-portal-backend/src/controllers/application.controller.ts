@@ -106,6 +106,9 @@ export const applyToJob = async (req: Request, res: Response) => {
     if (missing.length > 0) {
       return reject(400, `Missing required field(s): ${missing.join(", ")}`);
     }
+    if (!/^\d{10}$/.test(String(phone))) {
+      return reject(400, "Phone number must contain exactly 10 digits");
+    }
 
     if (String(declarationAccepted) !== "true") {
       return reject(
