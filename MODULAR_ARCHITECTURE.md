@@ -81,6 +81,7 @@ The service and hook pattern is currently used for saved jobs, job alerts, and i
 
 ## Adding a feature
 
+
 1. Add the backend model if the feature needs new persisted data.
 2. Add a controller for its request behavior and a route for its API endpoints.
 3. Attach authentication, role checks, and upload middleware where needed.
