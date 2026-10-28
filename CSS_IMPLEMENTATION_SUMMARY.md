@@ -1,277 +1,56 @@
-# Custom CSS Implementation Summary
+# CSS Implementation Review
 
-## ✅ All Pages Now Have Custom CSS
+The frontend uses regular CSS stylesheets bundled by Vite. Shared styles provide the design foundation, while feature stylesheets add layouts and states for individual parts of the job portal. These are global CSS files, not CSS Modules, and Tailwind is not part of the frontend package.
 
-I've successfully created custom CSS files for all three new feature pages, replacing Tailwind classes with your project's design system.
+## Shared design system
 
----
+`job-portal-frontend/src/styles/variables.css` defines the core design tokens:
 
-## 📁 Files Created
+| Token | Use |
+| --- | --- |
+| `--bg`, `--surface` | Page and card backgrounds |
+| `--ink`, `--ink-muted` | Primary and secondary text |
+| `--border` | Borders and separators |
+| `--accent`, `--accent-dark`, `--gold` | Brand and emphasis colors |
+| `--success`, `--success-bg` | Success states |
+| `--danger`, `--danger-bg` | Error and destructive states |
+| `--pending-bg`, `--pending-ink` | Pending states |
+| `--font-body`, `--font-display` | Body and heading typefaces |
 
-### CSS Files (3 files)
+`styles-index.css`, imported by `src/main.tsx`, brings in the shared styles for the site foundation, layout, utilities, buttons, forms, navigation, hero, footer, job pages, dashboards, applications, authentication, content pages, admin screens, and advertisements.
 
-1. **`src/styles/JobAlerts.css`** - 6KB
-   - Complete styling for job alerts management
-   - Form inputs, keyword tags, job type toggles
-   - Alert cards with actions
-   - Responsive design
+## Feature stylesheets
 
-2. **`src/styles/SavedJobs.css`** - 4KB
-   - Saved jobs listing page
-   - Job cards with metadata
-   - Remove functionality
-   - Action buttons
+| Stylesheet | Current purpose |
+| --- | --- |
+| `JobAlerts.css` | Alert form, keyword tags, job-type controls, alert cards, active/paused states, and actions |
+| `SavedJobs.css` | Saved-job cards, job metadata, remove action, and view/apply actions |
+| `Interviews.css` | Candidate and employer interview cards, filters, status, meeting details, notes, and feedback |
+| `EmployerInterviews.css` | Interview scheduling dialog and employer applicant/interview actions |
+| `Bookmark.css` | Bookmark controls and related job-card actions |
 
-3. **`src/styles/Interviews.css`** - 5KB
-   - Interview schedule display
-   - Filter tabs (All/Upcoming/Completed)
-   - Interview cards with status badges
-   - Meeting links and feedback sections
+The page/component files import these feature stylesheets directly. The shared stylesheet index does not import every feature stylesheet.
 
-### Updated Components (3 files)
+## Responsive behavior and interaction styles
 
-1. **`src/pages/JobAlerts.tsx`**
-   - Removed Tailwind classes
-   - Added CSS class names
-   - Imported `JobAlerts.css`
-   - Fixed deprecated `onKeyPress` → `onKeyDown`
+- `JobAlerts.css` adjusts its layout at 768px and below.
+- `SavedJobs.css` and `Interviews.css` include 768px and 480px breakpoints.
+- `EmployerInterviews.css` includes a 560px breakpoint.
+- Several controls and cards define hover, focus, active, disabled, or status styles. Loading indicators use spinner animation rules in the feature stylesheets.
 
-2. **`src/pages/SavedJobs.tsx`**
-   - Removed Tailwind classes
-   - Added CSS class names
-   - Imported `SavedJobs.css`
+These breakpoints describe the listed feature stylesheets; other pages use the responsive rules in their own shared or page-level CSS files.
 
-3. **`src/pages/Interviews.tsx`**
-   - Removed Tailwind classes
-   - Added CSS class names
-   - Imported `Interviews.css`
+## Review notes
 
----
+- The feature styles are plain global CSS. Selectors such as `.loading-container` and `.spinner` are declared in more than one feature stylesheet, and names like `.filter-tabs`, `.empty-state`, `.job-logo`, and `.form-group` are broad enough to overlap with other screens. Scope new selectors beneath the page root (for example, `.job-alerts-page .filter-tabs`) or use feature-prefixed class names to reduce accidental cascade changes.
+- The current naming is mixed: page-prefixed names such as `.saved-jobs-page` sit alongside generic names such as `.job-title`. Follow the page-root prefix when adding styles; this fits the existing plain-CSS setup without requiring a tooling change.
+- Earlier bundle-size, gzip, and build-success figures described a past build and are not a current verification of this checkout, so they have been removed. Run a fresh frontend build before publishing new size numbers.
+- The styles do not provide a separate light/dark theme system. They use one token set declared in `variables.css`.
 
-## 🎨 Design System Integration
+## Adding or updating styles
 
-All CSS files use your existing CSS variables:
-
-```css
-✅ var(--bg)           - Background color
-✅ var(--surface)      - Card backgrounds
-✅ var(--ink)          - Primary text
-✅ var(--ink-muted)    - Secondary text
-✅ var(--border)       - Borders
-✅ var(--accent)       - Primary actions (green)
-✅ var(--accent-dark)  - Hover states
-✅ var(--success)      - Success states
-✅ var(--success-bg)   - Success backgrounds
-✅ var(--danger)       - Error states
-✅ var(--danger-bg)    - Error backgrounds
-✅ var(--pending-bg)   - Pending states
-✅ var(--pending-ink)  - Pending text
-```
-
----
-
-## 📊 Build Results
-
-```bash
-✅ Build successful
-✅ CSS bundled: 47.58 kB (gzipped: 9.25 kB)
-✅ Total JS: 339.10 kB (gzipped: 105.51 kB)
-✅ No errors or warnings
-```
-
-**CSS Size Breakdown:**
-- JobAlerts.css: ~6 KB
-- SavedJobs.css: ~4 KB
-- Interviews.css: ~5 KB
-- Total new CSS: ~15 KB (bundled into main CSS)
-
----
-
-## 🎯 CSS Features Included
-
-### Common Features (All Pages)
-- ✅ Loading spinners with animations
-- ✅ Empty states with icons
-- ✅ Responsive design (mobile-first)
-- ✅ Hover effects and transitions
-- ✅ Focus states for accessibility
-- ✅ Consistent spacing and typography
-
-### JobAlerts Specific
-- ✅ Keyword tag input with add/remove
-- ✅ Job type toggle buttons
-- ✅ Alert form with validation styling
-- ✅ Active/paused status indicators
-- ✅ Action buttons (toggle, edit, delete)
-
-### SavedJobs Specific
-- ✅ Job cards with logos
-- ✅ Remove button (top-right)
-- ✅ Job metadata grid
-- ✅ Action buttons (View Details, Apply Now)
-- ✅ Salary and date formatting
-
-### Interviews Specific
-- ✅ Filter tabs (All/Upcoming/Completed)
-- ✅ Status badges (scheduled, completed, cancelled)
-- ✅ Interview type icons
-- ✅ Meeting link buttons
-- ✅ Notes and feedback sections
-- ✅ Result indicators (passed/failed)
-- ✅ Upcoming interview highlight (left border)
-
----
-
-## 📱 Responsive Breakpoints
-
-```css
-/* Tablet: 768px and below */
-@media (max-width: 768px) {
-  - Stacked layouts
-  - Full-width buttons
-  - Adjusted spacing
-}
-
-/* Mobile: 480px and below */
-@media (max-width: 480px) {
-  - Single column grids
-  - Vertical filter tabs
-  - Compact headers
-}
-```
-
----
-
-## 🔧 CSS Architecture
-
-### Naming Convention
-```css
-.page-name-element        → Main page containers
-.element-modifier         → Component variations
-.btn-action-name          → Button styles
-.element-state            → State classes (active, disabled, etc.)
-```
-
-### Examples
-```css
-.job-alerts-page          → Main page wrapper
-.alert-form-card          → Card component
-.btn-create-alert         → Action button
-.alert-card.inactive      → State modifier
-```
-
----
-
-## ✨ Animation & Transitions
-
-All interactive elements have smooth transitions:
-
-```css
-transition: all 0.2s;           /* Buttons, cards */
-transition: background 0.2s;     /* Background changes */
-transition: color 0.2s;          /* Text color changes */
-transition: box-shadow 0.2s;     /* Card hover effects */
-
-/* Loading spinner */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-```
-
----
-
-## 🎨 Color Consistency
-
-### Status Colors
-```css
-/* Success (Active, Passed) */
-background: var(--success-bg);
-color: var(--success);
-
-/* Danger (Cancelled, Failed) */
-background: var(--danger-bg);
-color: var(--danger);
-
-/* Pending (Rescheduled) */
-background: var(--pending-bg);
-color: var(--pending-ink);
-
-/* Info (Scheduled) */
-background: #dbeafe;
-color: #1e40af;
-```
-
----
-
-## 🚀 Performance
-
-### Optimizations
-- ✅ CSS is bundled and minified by Vite
-- ✅ Gzip compression enabled
-- ✅ No unused CSS (modular approach)
-- ✅ Efficient selectors (no deep nesting)
-- ✅ Hardware-accelerated animations (transform)
-
-### Load Time Impact
-- Additional CSS: ~15 KB uncompressed
-- Gzipped impact: ~3-4 KB total
-- **Negligible performance impact**
-
----
-
-## 📝 Maintenance Tips
-
-### Adding New Styles
-1. Follow existing naming convention
-2. Use CSS variables for colors
-3. Add hover states for interactive elements
-4. Include responsive breakpoints
-5. Test in light/dark modes (if applicable)
-
-### Modifying Existing Styles
-1. Search for class name in CSS file
-2. Update values (spacing, colors, sizes)
-3. Test responsiveness after changes
-4. Rebuild to verify no errors
-
-### Creating New Pages
-1. Create new CSS file in `src/styles/`
-2. Define page-specific classes
-3. Import in component: `import "../styles/PageName.css"`
-4. Use existing patterns from other CSS files
-
----
-
-## ✅ Testing Checklist
-
-- [x] All pages load without errors
-- [x] CSS is properly bundled
-- [x] Responsive design works on mobile
-- [x] Hover states are visible
-- [x] Buttons are clickable
-- [x] Forms are styled correctly
-- [x] Loading spinners animate
-- [x] Empty states display properly
-- [x] Status badges show correct colors
-- [x] Build completes successfully
-
----
-
-## 📦 Summary
-
-**Total Files Created/Modified:** 6 files
-- 3 new CSS files
-- 3 updated component files
-
-**CSS Coverage:** 100% of new features styled
-**Design System:** Fully integrated
-**Build Status:** ✅ Successful
-**Performance Impact:** Minimal (~3-4 KB gzipped)
-
-Your job portal now has professional, consistent styling across all new features! 🎉
-
----
-
-**Created:** October 2, 2026  
-**Build Verified:** ✅ Success  
-**CSS Size:** 47.58 kB bundled (9.25 kB gzipped)
+1. Reuse the variables in `variables.css` for shared colors and typography.
+2. Put page-specific rules in a stylesheet under `src/styles/` and import it from the page or component that owns those styles.
+3. Scope selectors under the page or component root to avoid global name collisions.
+4. Add responsive rules at the widths where the layout needs to change.
+5. Include interaction states for controls, including visible keyboard focus where appropriate.

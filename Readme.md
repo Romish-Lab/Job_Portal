@@ -1,145 +1,153 @@
-# Job Portal — Backend (TypeScript + Express + MongoDB)
+# Job Portal
 
-Built using the same architecture pattern as your e-commerce repo:
+A full-stack job portal built with React, TypeScript, Express, and MongoDB. Candidates can find and apply for jobs, employers can manage listings and applicants, and administrators can review activity and moderate the platform.
 
-```
-CLIENT / POSTMAN
-       ↓
-     ROUTES
-       ↓
-  CONTROLLERS
-       ↓
-    MODELS
-       ↓
-   MONGOOSE
-       ↓
-    MONGODB
-```
+## Features
 
-With the same supporting layer:
+- Candidate and employer accounts with role-based access and secure cookie authentication
+- Job search, filtering, details, company profiles, and paginated listings
+- Employer job posting and management, applicant review, and dashboards
+- Candidate applications with resume and photo uploads, plus application status tracking
+- Saved jobs, job alerts, and interview scheduling for candidates and employers
+- Paid job advertisements through Stripe, with admin approval and advertisement expiry handling
+- Admin dashboards for users, jobs, messages, advertisement pricing, and audit logs
+- Password reset, email notifications, contact form, and informational/blog pages
+- Responsive frontend styling with shared design tokens and feature-specific stylesheets
 
-```
-┌── JWT Authentication (httpOnly cookie)
-├── bcryptjs Password Hashing
-├── Multer Resume Upload
-├── Cloudinary (ready to wire in for resume/logo hosting)
-└── Nodemailer (ready to wire in for notification emails)
-```
+## Tech stack
 
-## Folder structure
+| Area | Technologies |
+| --- | --- |
+| Frontend | React 18, TypeScript, Vite, React Router, Axios |
+| Styling | Plain CSS, shared CSS variables, responsive stylesheets |
+| Backend | Node.js, Express 5, TypeScript |
+| Database | MongoDB with Mongoose |
+| Authentication | JWT in httpOnly cookies, bcryptjs, role-based middleware |
+| Integrations | Stripe, Nodemailer |
 
-```
+## Project layout
+
+```text
 job-portal/
-├── src/
-│   ├── server.ts
-│   ├── config/
-│   │   └── db.ts
-│   ├── models/
-│   │   ├── user.model.ts          # candidate or employer
-│   │   ├── job.model.ts
-│   │   └── application.model.ts
-│   ├── controllers/
-│   │   ├── auth.controller.ts
-│   │   ├── job.controller.ts
-│   │   └── application.controller.ts
-│   ├── routes/
-│   │   ├── auth.routes.ts
-│   │   ├── job.routes.ts
-│   │   └── application.routes.ts
-│   ├── middleware/
-│   │   ├── auth.middleware.ts     # protect + authorize(role)
-│   │   └── upload.middleware.ts   # multer for resumes
-│   ├── utils/
-│   │   ├── jwt.ts
-│   │   ├── cloudinary.ts
-│   │   └── sendEmail.ts
-│   └── types/
-│       └── express.d.ts          # adds req.user typing
-├── uploads/
-├── package.json
-├── tsconfig.json
-├── .env.example
-└── .gitignore
+├── job-portal-frontend/
+│   └── src/
+│       ├── api/             # Axios client and API origin
+│       ├── components/      # Shared and domain-specific UI
+│       ├── context/         # Authentication and saved-jobs state
+│       ├── hooks/           # Reusable feature state and actions
+│       ├── pages/           # Route-level screens
+│       ├── services/        # Feature-specific API operations
+│       ├── styles/          # Shared and feature-specific CSS
+│       ├── types/           # Frontend TypeScript models
+│       └── utils/           # Formatting and other helpers
+├── job-portal-backend/
+│   └── src/
+│       ├── config/          # Database connection
+│       ├── controllers/     # Request handlers and business logic
+│       ├── middleware/      # Authentication, authorization, uploads
+│       ├── models/          # Mongoose schemas
+│       ├── routes/          # API route definitions
+│       ├── scripts/         # Admin seed and migration scripts
+│       ├── types/           # Express type extensions
+│       └── utils/           # Email, payments, alerts, and shared helpers
+├── render.yaml              # Render deployment blueprint
+└── package.json             # Monorepo scripts
 ```
 
-## Two roles, one flow
+## CSS implementation
 
-Every feature follows: **Route → Controller → Model → MongoDB**, exactly
-like your e-commerce repo, just with two user roles instead of one:
+The frontend uses regular CSS files organized by shared layout and feature. Vite bundles these styles with the React app.
 
-```
-CANDIDATE                                    EMPLOYER
-    │                                            │
-    ├── POST /api/auth/register (role=candidate) ├── POST /api/auth/register (role=employer)
-    ├── GET  /api/jobs            (browse/search) ├── POST /api/jobs           (post a job)
-    ├── POST /api/applications/:jobId/apply       ├── GET  /api/jobs/mine
-    │        (uploads resume via multer)          ├── GET  /api/applications/job/:jobId
-    └── GET  /api/applications/mine               └── PATCH /api/applications/:id/status
-```
+- `src/styles/variables.css` defines the color and typography tokens used across the interface, including `--bg`, `--surface`, `--ink`, `--border`, and `--accent`, as well as success, danger, and pending state colors.
+- `src/styles/styles-index.css` imports the shared foundation: layout, utilities, buttons, forms, navigation, hero, footer, job listings, dashboards, authentication, content pages, admin screens, and advertisements.
+- Feature stylesheets such as `JobAlerts.css`, `SavedJobs.css`, `Interviews.css`, and `EmployerInterviews.css` keep feature-specific presentation close to the pages that use them. `Bookmark.css` styles bookmark controls.
+- Shared tokens keep colors and typography consistent. Stylesheets include responsive rules for narrower screens, along with interaction states such as hover, focus, loading, empty, and status states.
 
-## Setup
+To add a page style, create a stylesheet under `job-portal-frontend/src/styles/` and import it from the page or component that owns those styles. Use the existing CSS variables for shared colors and add responsive rules where the layout needs them.
+
+## Modular design
+
+The frontend separates screens, reusable interface elements, data access, and feature behavior:
+
+- **Pages** compose route-level experiences such as job search, applications, interviews, and admin screens.
+- **Components** provide reusable pieces such as job cards, navigation, status badges, modals, and empty states.
+- **Services** keep API calls grouped by feature, including saved jobs, alerts, and interviews.
+- **Hooks and context** hold reusable feature state and shared authentication or saved-job state.
+- **Types and utilities** centralize TypeScript data shapes and formatting helpers.
+
+The backend follows a request flow of **route -> middleware -> controller -> model -> MongoDB**. Routes define API endpoints, middleware handles authentication, role checks, uploads, and request controls, controllers implement application behavior, and Mongoose models define persisted data. Shared utilities handle concerns such as email, Stripe, alert matching, and scheduled advertisement expiry.
+
+## Run locally
+
+### Requirements
+
+- Node.js and npm
+- A MongoDB connection string
+
+### Install dependencies
+
+From the repository root:
 
 ```bash
-npm install
-cp .env.example .env   # fill in MONGO_URI, JWT_SECRET, etc.
-npm run dev             # nodemon + ts-node, http://localhost:5000
+npm run install:all
 ```
 
-Build for production:
+### Configure the backend
+
+Copy `job-portal-backend/.env.example` to `job-portal-backend/.env` and set at least:
+
+```dotenv
+MONGO_URI=your-mongodb-connection-string
+JWT_SECRET=replace-with-a-long-random-secret
+```
+
+The example file lists the other supported settings. `PORT` defaults to `5000`; `CLIENT_URL` defaults to `http://localhost:5173`. Configure SMTP settings for email delivery and Stripe keys plus a webhook secret for paid advertisements. Cloudinary settings are available for deployments that use Cloudinary.
+
+The frontend API client defaults to `http://localhost:5000`. To use a different backend origin locally, set `VITE_API_URL` in `job-portal-frontend/.env`.
+
+### Start the development servers
+
+Run each command in a separate terminal from the repository root:
 
 ```bash
-npm run build
+npm run dev:backend
+npm run dev:frontend
+```
+
+The frontend runs on `http://localhost:5173`; the backend runs on `http://localhost:5000`. The backend health endpoint is `http://localhost:5000/api/health`.
+
+### Build and start
+
+```bash
+npm run build:backend
+npm run build:frontend
 npm start
 ```
 
-## API reference
+For a one-command install and build, `npm run build` installs both app dependencies and builds the backend and frontend. In production, set `NODE_ENV=production`; the backend serves the built frontend from `job-portal-frontend/dist`.
 
-### Auth (`/api/auth`)
-| Method | Route | Access | Body |
-|---|---|---|---|
-| POST | `/register` | Public | `name, email, password, role (candidate\|employer), company?` |
-| POST | `/login` | Public | `email, password` |
-| POST | `/logout` | Public | – |
-| GET | `/me` | Logged in | – |
+## API groups
 
-### Jobs (`/api/jobs`)
-| Method | Route | Access | Notes |
-|---|---|---|---|
-| GET | `/` | Public | Query: `search, location, type, page, limit` |
-| GET | `/:id` | Public | Single job detail |
-| GET | `/mine` | Employer | Jobs posted by the logged-in employer |
-| POST | `/` | Employer | Create a job posting |
-| PUT | `/:id` | Employer (owner) | Update a job |
-| DELETE | `/:id` | Employer (owner) | Delete a job |
+The Express API is mounted under `/api`:
 
-### Applications (`/api/applications`)
-| Method | Route | Access | Notes |
-|---|---|---|---|
-| POST | `/:jobId/apply` | Candidate | `multipart/form-data`: `resume` file + `coverLetter` |
-| GET | `/mine` | Candidate | Candidate's own applications |
-| GET | `/job/:jobId` | Employer (owner) | All applicants for one job |
-| PATCH | `/:id/status` | Employer (owner) | Body: `status: pending\|reviewed\|accepted\|rejected` |
+| Prefix | Purpose |
+| --- | --- |
+| `/auth` | Registration, login, logout, current user, password reset |
+| `/jobs` | Search, job details, employer job management, dashboards |
+| `/applications` | Job applications, applicant review, status updates, protected file access |
+| `/companies` | Company profiles |
+| `/saved-jobs` | Save, remove, and check saved jobs |
+| `/job-alerts` | Create and manage candidate alerts |
+| `/interviews` | Schedule and manage interviews |
+| `/payments` | Advertisement pricing and Stripe checkout |
+| `/admin` and `/users` | Moderation, reports, user management, messages, audit logs |
+| `/contact` | Public contact form |
 
-## Reusable template (for your next project)
+## Further documentation
 
-Whatever domain you build next (Library, Gym, Student system), reuse the same skeleton:
+- [Modular architecture review](MODULAR_ARCHITECTURE.md)
+- [CSS implementation review](CSS_IMPLEMENTATION_SUMMARY.md)
 
-```
-Step 1  → create project
-Step 2  → install packages
-Step 3  → configure tsconfig.json
-Step 4  → connect MongoDB (config/db.ts)
-Step 5  → define model(s)
-Step 6  → write controller(s)
-Step 7  → wire up routes
-Step 8  → add middleware (auth/upload)
-Step 9  → assemble server.ts
-Step 10 → test in Postman
-```
+## Deployment
 
-## Suggested next steps for your certificate submission
-
-1. Wire `resumeUrl`/logo uploads through `utils/cloudinary.ts` instead of local disk storage.
-2. Add a React frontend (candidate job feed + employer dashboard) to complete the "MERN" stack.
-3. Add email notifications via `utils/sendEmail.ts` when an application status changes.
-4. Deploy: MongoDB Atlas + Render/Railway (backend) + Vercel (frontend).
+The repository includes a `render.yaml` blueprint for deploying the combined application on Render. Set the database, public client URL, email, Stripe, and other integration values in the deployment environment. In production, the Express server serves the Vite build and handles API requests from the same origin.

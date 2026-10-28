@@ -1,270 +1,89 @@
-# Job Portal - Modular Architecture Documentation
+# Modular Architecture Review
 
-## 📁 Project Structure
+This document describes the current source layout and the main boundaries in the Job Portal. The frontend uses feature services and hooks for saved jobs, job alerts, and interviews, alongside shared components and state. The backend separates routes, middleware, controllers, models, and utilities.
 
-### Backend Structure
+## Source layout
 
-```
-job-portal-backend/src/
-├── controllers/
-│   ├── auth.controller.ts
-│   ├── savedJob.controller.ts
-│   ├── jobAlert.controller.ts
-│   └── interview.controller.ts
-├── models/
-│   ├── user.model.ts
-│   ├── job.model.ts
-│   ├── application.model.ts
-│   ├── jobAlert.model.ts
-│   └── interview.model.ts
-├── routes/
-│   ├── auth.routes.ts
-│   ├── savedJob.routes.ts
-│   ├── jobAlert.routes.ts
-│   └── interview.routes.ts
-├── utils/
-│   ├── sendEmail.ts
-│   ├── emailTemplates.ts (NEW - Modular email templates)
-│   └── jwt.ts
-└── server.ts
-```
+### Frontend
 
-### Frontend Structure
-
-```
+```text
 job-portal-frontend/src/
-├── components/
-│   ├── ui/ (NEW - Reusable UI components)
-│   │   ├── PageHeader.tsx
-│   │   ├── JobLogo.tsx
-│   │   ├── FilterTabs.tsx
-│   │   ├── StatusBadge.tsx
-│   │   ├── Modal.tsx
-│   │   ├── EmptyState.tsx
-│   │   └── LoadingSpinner.tsx
-│   ├── jobs/ (NEW - Job-specific components)
-│   │   └── JobCard.tsx
-│   ├── interviews/ (NEW - Interview components)
-│   │   └── InterviewCard.tsx
-│   └── BookmarkButton.tsx
-├── hooks/ (NEW - Custom React hooks)
-│   ├── useBookmark.ts
-│   ├── useSavedJobs.ts
-│   ├── useJobAlerts.ts
-│   └── useInterviews.ts
-├── services/ (NEW - API service layer)
-│   ├── savedJobs.service.ts
-│   ├── jobAlerts.service.ts
-│   └── interviews.service.ts
-├── utils/ (NEW - Utility functions)
-│   ├── api.ts
-│   └── formatters.ts
-└── pages/
-    ├── SavedJobs.tsx
-    ├── JobAlerts.tsx
-    └── Interviews.tsx
+├── api/              # Shared API origin and Axios client
+├── components/       # Shared UI, job, interview, and page components
+│   ├── ui/
+│   ├── jobs/
+│   └── interviews/
+├── context/          # Authentication and saved-job bookmark state
+├── hooks/            # Feature state for bookmarks, saved jobs, alerts, interviews
+├── pages/            # React Router screens
+├── services/         # Saved-job, alert, and interview API operations
+├── styles/           # Shared and feature-specific plain CSS
+├── types/            # Frontend domain types
+└── utils/            # API helper and formatting functions
 ```
 
-## 🧩 Modular Components Breakdown
+The `components/` directory also contains shared elements such as navigation, pagination, job cards, applicant photos, and interview scheduling UI.
 
-### 1. Email Templates (Backend)
-**File:** `utils/emailTemplates.ts`
-- `passwordResetTemplate()` - Separated from auth controller
-- `interviewScheduledTemplate()` - Separated from interview controller
-- Reusable, maintainable email HTML templates
+### Backend
 
-### 2. API Services (Frontend)
-**Files:** `services/*.service.ts`
-
-Each service handles API calls for a specific domain:
-- `savedJobs.service.ts` - Saved jobs CRUD operations
-- `jobAlerts.service.ts` - Job alerts management
-- `interviews.service.ts` - Interview scheduling & management
-
-**Benefits:**
-- Centralized API logic
-- Easy to mock for testing
-- Type-safe with TypeScript interfaces
-- Single source of truth for endpoints
-
-### 3. Custom Hooks (Frontend)
-**Files:** `hooks/*.ts`
-
-Encapsulate business logic and state management:
-- `useBookmark.ts` - Bookmark state & toggle logic
-- `useSavedJobs.ts` - Saved jobs fetching & management
-- `useJobAlerts.ts` - Alerts CRUD with state
-- `useInterviews.ts` - Interview data fetching
-
-**Benefits:**
-- Reusable logic across components
-- Separation of concerns
-- Cleaner component code
-- Easy to test
-
-### 4. UI Components (Frontend)
-**Files:** `components/ui/*.tsx`
-
-Reusable presentational components:
-- `PageHeader.tsx` - Consistent page headers with actions
-- `JobLogo.tsx` - Job logo with fallback
-- `FilterTabs.tsx` - Generic filter tab system
-- `StatusBadge.tsx` - Status badges with variants
-- `Modal.tsx` - Reusable modal wrapper
-- `EmptyState.tsx` - Empty state placeholder
-- `LoadingSpinner.tsx` - Loading indicator
-
-**Benefits:**
-- Consistent UI across the app
-- DRY (Don't Repeat Yourself)
-- Easy to theme/style globally
-- Component reusability
-
-### 5. Domain Components (Frontend)
-**Files:** `components/jobs/*.tsx`, `components/interviews/*.tsx`
-
-Domain-specific components:
-- `JobCard.tsx` - Reusable job card with actions
-- `InterviewCard.tsx` - Interview display card
-
-**Benefits:**
-- Domain logic encapsulation
-- Easy to maintain
-- Props-based customization
-
-### 6. Utility Functions (Frontend)
-**File:** `utils/formatters.ts`
-
-Pure utility functions:
-- `formatSalary()` - Salary formatting
-- `formatDate()` - Relative date formatting
-- `formatDateTime()` - DateTime with smart labels
-- `isUpcoming()` - Date comparison
-- `capitalizeFirst()` - String capitalization
-
-**Benefits:**
-- Single responsibility
-- Easy to test
-- Reusable across components
-- No side effects
-
-### 7. API Client (Frontend)
-**File:** `utils/api.ts`
-
-Centralized Axios instance:
-- Base URL configuration
-- Credentials handling
-- Easy to add interceptors
-
-## 🎯 Usage Examples
-
-### Using Custom Hooks
-
-```typescript
-// In any component
-import { useBookmark } from '../hooks/useBookmark';
-
-function MyComponent({ jobId }) {
-  const { isSaved, loading, toggleBookmark } = useBookmark(jobId);
-  
-  const handleClick = async () => {
-    const result = await toggleBookmark();
-    if (result.success) {
-      toast.success(result.message);
-    }
-  };
-}
+```text
+job-portal-backend/src/
+├── config/           # MongoDB connection
+├── controllers/      # Auth, jobs, applications, users, admin, payments, and more
+├── middleware/       # Authentication, role checks, and upload handling
+├── models/           # Mongoose data models
+├── routes/           # API endpoints grouped by domain
+├── scripts/          # Admin seeding and job migration
+├── types/            # Express request type extensions
+├── utils/            # JWT, email, Stripe, alerts, audit, and ad helpers
+└── server.ts         # Middleware, route mounting, schedulers, and startup
 ```
 
-### Using Service Layer
+## Request and feature flow
 
-```typescript
-// Direct service call
-import { savedJobsService } from '../services/savedJobs.service';
+For frontend features that use the service layer, the flow is:
 
-const jobs = await savedJobsService.getSavedJobs();
+```text
+Page or component -> hook or context -> service -> API client -> Express route
+                                                              -> middleware
+                                                              -> controller
+                                                              -> Mongoose model
+                                                              -> MongoDB
 ```
 
-### Using UI Components
+The service and hook pattern is currently used for saved jobs, job alerts, and interviews. Other pages may call the shared API client directly. On the backend, routes define endpoints, middleware enforces authentication and role access or handles uploads, controllers implement request behavior, and models describe persisted data.
 
-```typescript
-import { PageHeader } from '../components/ui/PageHeader';
-import { EmptyState } from '../components/ui/EmptyState';
-import { Bookmark } from 'lucide-react';
+## Main module responsibilities
 
-<PageHeader
-  icon={<Bookmark className="h-8 w-8 text-emerald-500" />}
-  title="Saved Jobs"
-  description="Your bookmarked opportunities"
-  action={{
-    label: "Browse Jobs",
-    onClick: () => navigate('/jobs')
-  }}
-/>
-```
+### Frontend
 
-### Using Formatters
+- **Pages** compose route-level screens for candidates, employers, and administrators.
+- **Components** provide reusable interface elements and domain displays.
+- **Services** group API operations for saved jobs, alerts, and interviews.
+- **Hooks** manage feature-level fetching, updates, loading, and error state.
+- **Context** provides authentication and bookmark state across the app.
+- **Types and utilities** hold shared data shapes and helpers such as date and salary formatting.
 
-```typescript
-import { formatSalary, formatDate } from '../utils/formatters';
+### Backend
 
-const display = formatSalary(50000, 80000); // "$50,000 - $80,000"
-const posted = formatDate("2026-09-30"); // "2 days ago"
-```
+- **Routes** map API paths to handlers and attach relevant middleware.
+- **Middleware** protects routes, checks user roles, and validates/stores upload files.
+- **Controllers** coordinate request validation, database operations, and responses.
+- **Models** define MongoDB collections and relationships.
+- **Utilities** contain reusable functions for email, payment, job-alert matching, audit logging, and scheduled advertisement expiry.
 
-## 📊 Modular Benefits
+## Review notes
 
-### Maintainability
-- ✅ Easy to locate and fix bugs
-- ✅ Clear separation of concerns
-- ✅ Changes don't ripple across the codebase
+- There are two Axios entrypoints: `src/api/client.ts` configures the API base URL and credentials, while `src/utils/api.ts` creates another client. Feature services use the latter and include `/api` in their request paths; several other modules use the former. Consolidating these clients would reduce configuration drift.
+- Saved-job state has two layers for different use cases: `SavedJobsContext` supplies bookmark state to shared controls, while `useSavedJobs` loads and manages the saved-jobs page list. Keep their responsibilities clear when extending the feature.
+- TypeScript types are present across the app, but some feature hooks and service methods still use `any`. The earlier claim of complete type coverage was too broad.
+- The route/controller/model structure is clear, while some controllers and pages still own substantial feature logic. Treat the layout as a modular monolith rather than claiming every feature follows an identical service pattern.
 
-### Scalability
-- ✅ Add new features without touching existing code
-- ✅ Easy to extend functionality
-- ✅ Components can be reused
+## Adding a feature
 
-### Testability
-- ✅ Small, focused functions
-- ✅ Easy to mock services
-- ✅ Pure utility functions
-
-### Developer Experience
-- ✅ Clear file structure
-- ✅ Easy onboarding for new developers
-- ✅ TypeScript autocomplete works better
-- ✅ Reduced code duplication
-
-## 🚀 Build Status
-
-✅ **Backend:** Compiles without errors  
-✅ **Frontend:** Builds successfully (345.81 kB)  
-✅ **Type Safety:** Full TypeScript coverage  
-✅ **Modular:** 18 new reusable modules created  
-
-## 📝 Files Created
-
-### Backend (2 files)
-- `utils/emailTemplates.ts`
-
-### Frontend (16 files)
-- **Services:** 3 files
-- **Hooks:** 4 files
-- **UI Components:** 7 files
-- **Domain Components:** 2 files
-- **Utils:** 2 files
-
-Total: **18 new modular files**
-
-## 🎨 Code Quality Improvements
-
-1. **Single Responsibility:** Each file has one clear purpose
-2. **Reusability:** Components and hooks used across features
-3. **Type Safety:** Interfaces defined for all data structures
-4. **DRY Principle:** No repeated code
-5. **Clean Architecture:** Clear separation of layers
-
----
-
-**Last Updated:** October 2, 2026  
-**Version:** 2.0.0 (Modular Architecture)
+1. Add the backend model if the feature needs new persisted data.
+2. Add a controller for its request behavior and a route for its API endpoints.
+3. Attach authentication, role checks, and upload middleware where needed.
+4. On the frontend, add types and a service for the API operations.
+5. Add a hook or context only when state or behavior needs to be shared or reused.
+6. Compose the route-level UI from existing components and add feature styles under `src/styles/`.
