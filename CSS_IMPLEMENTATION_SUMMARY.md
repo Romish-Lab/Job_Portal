@@ -29,6 +29,7 @@ The frontend uses regular CSS stylesheets bundled by Vite. Shared styles provide
 | `EmployerInterviews.css` | Interview scheduling dialog and employer applicant/interview actions |
 | `Bookmark.css` | Bookmark controls and related job-card actions |
 
+
 The page/component files import these feature stylesheets directly. The shared stylesheet index does not import every feature stylesheet.
 
 ## Responsive behavior and interaction styles
