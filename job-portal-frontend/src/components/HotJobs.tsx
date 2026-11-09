@@ -1,30 +1,28 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Trophy } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Flame, MapPin } from "lucide-react";
 import client from "../api/client";
 import { Job } from "../types";
-import { compactSalary } from "../utils/salary";
 
 const ROTATE_MS = 4000; // change job every 4 seconds
 
 const PALETTE = [
-  "linear-gradient(135deg, #f2a516, #f7d36b)", // gold for #1
-  "linear-gradient(135deg, #e0567a, #f79a5b)",
+  "linear-gradient(135deg, #e34b32, #f7954e)",
+  "linear-gradient(135deg, #d84e3e, #f2a516)",
   "linear-gradient(135deg, #5b3b8a, #a37be0)",
   "linear-gradient(135deg, #146c5d, #3fb59a)",
   "linear-gradient(135deg, #3b4f7a, #6f8fd6)",
 ];
-const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function HotJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  // Load the 10 highest-paying jobs once
+  // The public jobs endpoint returns the newest live jobs first.
   useEffect(() => {
     client
-      .get("/jobs", { params: { limit: 10, sort: "salary" } })
+      .get("/jobs", { params: { limit: 10 } })
       .then(({ data }) => setJobs(data.jobs))
       .catch(() => setJobs([]));
   }, []);
@@ -39,7 +37,6 @@ export default function HotJobs() {
   if (jobs.length === 0) return null;
 
   const job = jobs[index];
-  const salary = compactSalary(job.salaryMin, job.salaryMax);
   const go = (delta: number) => setIndex((i) => (i + delta + jobs.length) % jobs.length);
 
   return (
@@ -50,11 +47,11 @@ export default function HotJobs() {
     >
       <div className="hot-head">
         <span className="hj-icon" aria-hidden="true">
-          <Trophy size={18} />
+          <Flame size={18} />
         </span>
         <div>
-          <h2>Highest paying jobs</h2>
-          <small className="hj-sub">Top {jobs.length} by salary</small>
+          <h2>Hot Jobs</h2>
+          <small className="hj-sub">The latest openings</small>
         </div>
       </div>
 
@@ -66,22 +63,16 @@ export default function HotJobs() {
         style={{ "--hj-bg": PALETTE[index % PALETTE.length] } as CSSProperties}
       >
         <span className="hj-rank" aria-hidden="true">
-          {index + 1}
+          <Flame size={76} />
         </span>
         <span className="hj-pill">
-          {MEDALS[index] ? `${MEDALS[index]} ` : `#${index + 1} · `}
+          <Flame size={13} />
+          Hot ·{" "}
           {job.type}
         </span>
 
         <h3 className="hj-title">{job.title}</h3>
         <p className="hj-company">{job.company}</p>
-
-        {salary && (
-          <div className="hj-salary">
-            <small>Salary</small>
-            {salary}
-          </div>
-        )}
 
         <div className="hj-foot">
           <span className="hj-where">

@@ -1,5 +1,5 @@
 /* ===================================================
-   Job cards + "Highest paying jobs" widget
+   Job cards + Hot Jobs widget
    (loaded last, so it wins over the old .job-tile / .hot-card rules)
    =================================================== */
 
@@ -292,7 +292,7 @@
   }
 }
 
-/* ---------- "Highest paying jobs" widget ---------- */
+/* ---------- Hot jobs widget ---------- */
 .hot-jobs {
   border-radius: 20px;
   padding: 1.15rem;
@@ -322,8 +322,8 @@
   place-items: center;
   border-radius: 11px;
   color: #fff;
-  background: linear-gradient(135deg, #f2a516, #f7d36b);
-  box-shadow: 0 6px 14px -6px rgba(242, 165, 22, 0.8);
+  background: linear-gradient(135deg, #e34b32, #f7954e);
+  box-shadow: 0 6px 14px -6px rgba(227, 75, 50, 0.65);
 }
 
 .hj-card {
@@ -350,15 +350,14 @@
   position: absolute;
   right: -4px;
   top: -18px;
-  font-family: var(--font-display);
-  font-size: 7rem;
-  font-weight: 800;
-  line-height: 1;
   color: rgba(255, 255, 255, 0.17);
   pointer-events: none;
 }
 .hj-pill {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   position: relative;
   padding: 0.18rem 0.65rem;
   border-radius: 999px;
@@ -385,25 +384,6 @@
   margin: 0;
   opacity: 0.93;
   font-size: 0.92rem;
-}
-.hj-salary {
-  position: relative;
-  margin-top: auto;
-  padding-top: 1rem;
-  font-family: var(--font-display);
-  font-size: 1.85rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.hj-salary small {
-  display: block;
-  margin-bottom: 0.3rem;
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.8;
 }
 .hj-foot {
   position: relative;

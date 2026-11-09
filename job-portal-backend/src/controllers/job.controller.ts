@@ -81,7 +81,6 @@ export const getJobs = async (req: Request, res: Response) => {
       type,
       page = "1",
       limit = "10",
-      sort,
     } = req.query;
 
     // Visibility is enforced on every request, so expired ads disappear
@@ -92,8 +91,6 @@ export const getJobs = async (req: Request, res: Response) => {
     if (company) filter.company = new RegExp(escapeRegex(String(company)), "i");
     if (location) filter.location = new RegExp(escapeRegex(String(location)), "i");
     if (type && JOB_TYPES.includes(String(type))) filter.type = type;
-    if (sort === "salary") filter.$or = [{ salaryMax: { $gt: 0 } }, { salaryMin: { $gt: 0 } }];
-
     const pageNum = Math.max(Number(page) || 1, 1);
     const limitNum = Math.min(Math.max(Number(limit) || 10, 1), MAX_LIMIT);
 
@@ -101,7 +98,7 @@ export const getJobs = async (req: Request, res: Response) => {
       Job.find(filter)
         .select("-rejectionReason -reviewedBy -reviewedAt")
         .populate("employer", "name company")
-        .sort(sort === "salary" ? { salaryMax: -1, salaryMin: -1 } : { createdAt: -1 })
+        .sort({ createdAt: -1 })
         .skip((pageNum - 1) * limitNum)
         .limit(limitNum),
       Job.countDocuments(filter),
