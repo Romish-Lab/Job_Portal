@@ -33,6 +33,8 @@ export interface IJob extends Document {
   adDuration?: number; // days
   adStartDate?: Date | null;
   adExpiryDate?: Date | null;
+  hotJobStartDate?: Date | null;
+  hotJobExpiryDate?: Date | null;
 
   // true only while the advertisement is live
   isActive: boolean;
@@ -76,6 +78,8 @@ const jobSchema = new Schema<IJob>(
     adDuration: { type: Number },
     adStartDate: { type: Date, default: null },
     adExpiryDate: { type: Date, default: null },
+    hotJobStartDate: { type: Date, default: null },
+    hotJobExpiryDate: { type: Date, default: null },
 
     // NOTE: default changed from true -> false. A job is only active once paid.
     isActive: { type: Boolean, default: false },

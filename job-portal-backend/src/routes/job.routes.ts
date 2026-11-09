@@ -3,6 +3,7 @@ import { uploadLogo } from "../middleware/upload.middleware";
 import {
   createJob,
   getJobs,
+  getHotJobs,
   getJobById,
   getMyJobs,
   getEmployerDashboard,
@@ -14,6 +15,7 @@ import { protect, authorize, optionalAuth } from "../middleware/auth.middleware"
 const router = Router();
 
 router.get("/", getJobs);
+router.get("/hot", getHotJobs);
 router.get("/mine", protect, authorize("employer"), getMyJobs);
 router.get("/dashboard", protect, authorize("employer"), getEmployerDashboard);
 router.get("/:id", optionalAuth, getJobById);

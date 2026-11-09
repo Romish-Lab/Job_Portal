@@ -12,6 +12,7 @@ export default function PaymentSuccess() {
   const sessionId = params.get("session_id");
   const [phase, setPhase] = useState<Phase>("checking");
   const [expiry, setExpiry] = useState<string | null>(null);
+  const [isHotPromotion, setIsHotPromotion] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -28,7 +29,8 @@ export default function PaymentSuccess() {
         const { data } = await client.post("/payments/confirm", { sessionId });
         if (cancelled) return;
         if (data.status === "paid") {
-          setExpiry(data.adExpiryDate);
+          setIsHotPromotion(data.kind === "hot_job");
+          setExpiry(data.kind === "hot_job" ? data.hotJobExpiryDate : data.adExpiryDate);
           setPhase("paid");
         } else if (++tries < 8) {
           setTimeout(check, 2000); // payment may still be settling
@@ -54,10 +56,14 @@ export default function PaymentSuccess() {
         <>
           <div className="page-header">
             <h1>Payment successful</h1>
-            <p className="page-subtitle">Your advertisement is now live.</p>
+            <p className="page-subtitle">
+              {isHotPromotion
+                ? "Your job now has priority placement in Hot Jobs."
+                : "Your advertisement is now live."}
+            </p>
           </div>
           <div className="form-success">
-            Advertisement Active · Expires: {formatDate(expiry)}
+            {isHotPromotion ? "Hot Jobs promotion" : "Advertisement Active"} · Expires: {formatDate(expiry)}
           </div>
           <p><Link className="btn-primary" to="/my-jobs">Back to my postings</Link></p>
         </>

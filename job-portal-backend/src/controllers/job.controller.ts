@@ -111,6 +111,39 @@ export const getJobs = async (req: Request, res: Response) => {
   }
 };
 
+// Public carousel: paid, unexpired Hot Jobs appear before the latest listings.
+export const getHotJobs = async (_req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const filter = publicJobFilter(now);
+    const limit = 10;
+
+    const featuredJobs = await Job.find({ ...filter, hotJobExpiryDate: { $gt: now } })
+      .select("-rejectionReason -reviewedBy -reviewedAt")
+      .populate("employer", "name company")
+      .sort({ hotJobStartDate: -1, createdAt: -1 })
+      .limit(limit);
+
+    const remaining = limit - featuredJobs.length;
+    const recentJobs =
+      remaining > 0
+        ? await Job.find({
+            ...filter,
+            _id: { $nin: featuredJobs.map((job) => job._id) },
+          })
+            .select("-rejectionReason -reviewedBy -reviewedAt")
+            .populate("employer", "name company")
+            .sort({ createdAt: -1 })
+            .limit(remaining)
+        : [];
+
+    res.status(200).json({ jobs: [...featuredJobs, ...recentJobs] });
+  } catch (error) {
+    console.error("getHotJobs error:", error);
+    res.status(500).json({ message: "Failed to fetch Hot Jobs" });
+  }
+};
+
 export const getJobById = async (req: Request, res: Response) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -139,7 +172,7 @@ export const getEmployerDashboard = async (req: Request, res: Response) => {
     const employerId = req.user?.id;
 
     const jobs = await Job.find({ employer: employerId })
-      .select("_id title company location type isActive approvalStatus paymentStatus adExpiryDate createdAt")
+      .select("_id title company location type isActive approvalStatus paymentStatus adExpiryDate hotJobExpiryDate createdAt")
       .sort({ createdAt: -1 });
 
     const jobIds = jobs.map((job) => job._id);

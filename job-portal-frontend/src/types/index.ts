@@ -46,6 +46,8 @@ export interface Job {
   adDuration?: number;
   adStartDate?: string | null;
   adExpiryDate?: string | null;
+  hotJobStartDate?: string | null;
+  hotJobExpiryDate?: string | null;
   adState?: AdState; // computed by GET /jobs/mine and the dashboard
   daysRemaining?: number;
 }
@@ -135,6 +137,7 @@ export interface DashboardJobSummary {
   adState?: AdState;
   daysRemaining?: number;
   adExpiryDate?: string | null;
+  hotJobExpiryDate?: string | null;
 }
 
 export interface EmployerDashboardResponse {

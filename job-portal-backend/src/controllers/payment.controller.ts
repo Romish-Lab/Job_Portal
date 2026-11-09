@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
+import mongoose from "mongoose";
 import Job from "../models/job.model";
 import Payment from "../models/payment.model";
 import User from "../models/user.model";
 import { getStripe } from "../utils/stripe";
 import { getPricing, priceForDuration } from "../utils/adPricing";
-import { isPubliclyVisible } from "../utils/adState";
+import { isPubliclyVisible, publicJobFilter } from "../utils/adState";
 import { matchInstantAlertsForJob } from "../utils/jobAlertMatcher";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -108,11 +109,103 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
   }
 };
 
+// Employer purchases a 7-day Hot Jobs placement for one of their live jobs.
+export const createHotJobCheckoutSession = async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.body;
+    if (!mongoose.isValidObjectId(jobId)) {
+      return res.status(400).json({ message: "Invalid job id" });
+    }
+
+    const job = await Job.findOne({ _id: jobId, employer: req.user?.id });
+    if (!job) return res.status(404).json({ message: "Job not found or not yours" });
+    if (!isPubliclyVisible(job)) {
+      return res.status(409).json({ message: "Only live jobs can be promoted." });
+    }
+    if (job.hotJobExpiryDate && job.hotJobExpiryDate > new Date()) {
+      return res.status(409).json({ message: "This job is already promoted." });
+    }
+
+    const price = await priceForDuration(7);
+    if (!price) {
+      return res.status(503).json({
+        message: "Hot Jobs promotion is unavailable because 7-day ad pricing is not configured.",
+      });
+    }
+
+    const employer = await User.findById(req.user?.id).select("email");
+    const stripe = getStripe();
+    const stale = await Payment.find({
+      job: job._id,
+      employer: req.user?.id,
+      kind: "hot_job",
+      status: "pending",
+    });
+    for (const previousPayment of stale) {
+      if (previousPayment.stripeSessionId) {
+        try {
+          await stripe.checkout.sessions.expire(previousPayment.stripeSessionId);
+        } catch {
+          // The session may already have expired or completed.
+        }
+      }
+      previousPayment.status = "expired";
+      await previousPayment.save();
+    }
+
+    const payment = await Payment.create({
+      job: job._id,
+      employer: req.user?.id,
+      kind: "hot_job",
+      amount: price.amount,
+      currency: price.currency,
+      durationDays: 7,
+      status: "pending",
+    });
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer_email: employer?.email,
+      client_reference_id: String(payment._id),
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: price.currency,
+            unit_amount: price.amount,
+            product_data: {
+              name: `Hot Jobs promotion: ${job.title}`,
+              description: "7-day featured placement in Hot Jobs",
+            },
+          },
+        },
+      ],
+      metadata: {
+        paymentId: String(payment._id),
+        jobId: String(job._id),
+        employerId: String(req.user?.id),
+        kind: "hot_job",
+      },
+      success_url: `${clientUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${clientUrl}/payment/cancelled?job=${job._id}`,
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
+    });
+
+    payment.stripeSessionId = session.id;
+    await payment.save();
+    res.status(200).json({ url: session.url });
+  } catch (error) {
+    console.error("Hot Jobs checkout error:", error);
+    res.status(500).json({ message: "Couldn't start the Hot Jobs promotion payment" });
+  }
+};
+
 // Activates the advertisement for a paid Checkout Session.
 // Idempotent: the webhook and /confirm can both call it, in any order, any number of times.
 export const activateFromSession = async (
   session: Stripe.Checkout.Session
-): Promise<"activated" | "already" | "not_paid" | "invalid"> => {
+): Promise<"activated" | "promoted" | "already" | "not_paid" | "invalid"> => {
   const paymentId = session.metadata?.paymentId;
   if (!paymentId) return "invalid";
 
@@ -135,6 +228,41 @@ export const activateFromSession = async (
 
   const now = new Date();
   const expiry = new Date(now.getTime() + payment.durationDays * DAY_MS);
+  if (payment.kind === "hot_job") {
+    const first = await Payment.findOneAndUpdate(
+      { _id: payment._id, status: { $ne: "paid" } },
+      {
+        status: "paid",
+        paidAt: now,
+        promotionStartDate: now,
+        promotionExpiryDate: expiry,
+        stripePaymentIntentId:
+          typeof session.payment_intent === "string" ? session.payment_intent : undefined,
+      },
+      { new: true }
+    );
+    const paid = first ?? (await Payment.findById(payment._id));
+    if (!paid?.promotionExpiryDate || !paid.promotionStartDate) return "invalid";
+
+    const updated = await Job.updateOne(
+      {
+        _id: paid.job,
+        ...publicJobFilter(now),
+        $or: [
+          { hotJobExpiryDate: null },
+          { hotJobExpiryDate: { $lt: paid.promotionExpiryDate } },
+        ],
+      },
+      {
+        $set: {
+          hotJobStartDate: paid.promotionStartDate,
+          hotJobExpiryDate: paid.promotionExpiryDate,
+        },
+      }
+    );
+
+    return first || updated.modifiedCount > 0 ? "promoted" : "already";
+  }
 
   // Atomically flip pending -> paid exactly once
   const first = await Payment.findOneAndUpdate(
@@ -204,7 +332,14 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         const session = event.data.object as Stripe.Checkout.Session;
         const outcome = await activateFromSession(session);
         console.log(`[stripe] ${event.type} ${session.id} -> ${outcome}`);
-        fireInstantAlerts(session.metadata?.paymentId ? (await Payment.findById(session.metadata.paymentId))?.job : null, outcome);
+        if (outcome === "activated") {
+          fireInstantAlerts(
+            session.metadata?.paymentId
+              ? (await Payment.findById(session.metadata.paymentId))?.job
+              : null,
+            outcome
+          );
+        }
         break;
       }
       case "checkout.session.async_payment_failed": {
@@ -268,10 +403,13 @@ export const confirmPayment = async (req: Request, res: Response) => {
     }
 
     const fresh = await Payment.findById(payment._id);
+    const job = payment.kind === "hot_job" ? await Job.findById(payment.job).select("hotJobExpiryDate") : null;
     res.status(200).json({
       status: fresh?.status,
+      kind: payment.kind,
       jobId: payment.job,
       adExpiryDate: fresh?.adExpiryDate,
+      hotJobExpiryDate: job?.hotJobExpiryDate,
     });
   } catch (error) {
     res.status(500).json({

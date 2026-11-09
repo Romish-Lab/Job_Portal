@@ -22,6 +22,7 @@ import JobApplicants from "./pages/JobApplicants";
 import AdminUsers from "./pages/AdminUsers";
 import AdminJobs from "./pages/AdminJobs";
 import PayForAd from "./pages/PayForAd";
+import PromoteJob from "./pages/PromoteJob";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancelled from "./pages/PaymentCancelled";
 import About from "./pages/About";
@@ -110,6 +111,14 @@ export default function App() {
             element={
               <ProtectedRoute allow={["employer"]}>
                 <PayForAd />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs/:id/promote"
+            element={
+              <ProtectedRoute allow={["employer"]}>
+                <PromoteJob />
               </ProtectedRoute>
             }
           />

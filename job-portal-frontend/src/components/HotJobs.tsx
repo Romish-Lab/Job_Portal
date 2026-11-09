@@ -19,10 +19,10 @@ export default function HotJobs() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  // The public jobs endpoint returns the newest live jobs first.
+  // The public Hot Jobs endpoint prioritizes promoted listings.
   useEffect(() => {
     client
-      .get("/jobs", { params: { limit: 10 } })
+      .get("/jobs/hot")
       .then(({ data }) => setJobs(data.jobs))
       .catch(() => setJobs([]));
   }, []);
@@ -37,6 +37,7 @@ export default function HotJobs() {
   if (jobs.length === 0) return null;
 
   const job = jobs[index];
+  const isHot = !!job.hotJobExpiryDate && new Date(job.hotJobExpiryDate).getTime() > Date.now();
   const go = (delta: number) => setIndex((i) => (i + delta + jobs.length) % jobs.length);
 
   return (
@@ -67,7 +68,7 @@ export default function HotJobs() {
         </span>
         <span className="hj-pill">
           <Flame size={13} />
-          Hot ·{" "}
+          {isHot ? "Featured" : "Latest"} ·{" "}
           {job.type}
         </span>
 
